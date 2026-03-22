@@ -111,9 +111,9 @@ def _init_track_info():
     return track_info
 
 class SearchType(str, Enum):
-    ARTIST = "artist"
-    ALBUM = "album"
-    TRACK = "track"
+    ARTIST = "artists"
+    ALBUM = "albums"
+    SONG = "songs"
 
 class Muzlib():
     def __init__(self, library_path, codec="opus", skip_downloaded=False):
@@ -231,16 +231,7 @@ class Muzlib():
         return album_metadata
     
     def search(self, search_term, search_type: SearchType):
-        if search_type == SearchType.ARTIST:
-            return self.ytmusic.search(search_term, filter="artists")
-        elif search_type == SearchType.ALBUM:
-            return self.ytmusic.search(query=search_term, filter="albums", limit=20)
-        elif search_type == SearchType.TRACK:
-            return self.ytmusic.search(query=search_term, filter="songs", limit=20)
-        else:
-            logging_utils.logging.error(f"Invalid search type: {search_type}")
-            print(f"Invalid search type: {search_type}")
-            return None
+        return self.ytmusic.search(search_term, filter=search_type.value, limit=20)
     
     def search_artist(self, artist_name):
         return self.search(artist_name, SearchType.ARTIST)
@@ -248,8 +239,8 @@ class Muzlib():
     def search_album(self, artist_name, album_name):
         return self.search(f"{artist_name} - {album_name}", SearchType.ALBUM)
     
-    def search_track(self, artist_name, track_name):
-        return self.search(f"{artist_name} - {track_name}", SearchType.TRACK)
+    def search_song(self, artist_name, track_name):
+        return self.search(f"{artist_name} - {track_name}", SearchType.SONG)
 
     def go_though_search_results(self, search_results, search_type: SearchType):
         for result in search_results:
@@ -259,7 +250,7 @@ class Muzlib():
                 album_artists = [artist['name'] for artist in result['artists']]
                 album_artists_str = ", ".join(album_artists)
                 full_name = album_artists_str + " - " + result['title']
-            elif search_type == SearchType.TRACK:
+            elif search_type == SearchType.SONG:
                 song_artists = [artist['name'] for artist in result['artists']]
                 song_artists_str = ", ".join(song_artists)
                 full_name = song_artists_str + " - " + result['title']
@@ -277,7 +268,7 @@ class Muzlib():
             self._get_discography_by_artist_id(search_result['browseId'])
         elif search_type == SearchType.ALBUM:
             self._get_album_metadata(search_result['browseId'])
-        elif search_type == SearchType.TRACK:
+        elif search_type == SearchType.SONG:
             self._get_album_metadata(search_result['album']['id'], single_id=search_result['videoId'], single_name=search_result['title'])
         else:
             logging_utils.logging.error(f"Invalid search type: {search_type}")
@@ -517,7 +508,7 @@ def main():
         choices=[
             questionary.Choice("Complete discography", value=SearchType.ARTIST),
             questionary.Choice("Specific album",       value=SearchType.ALBUM),
-            questionary.Choice("Specific track",       value=SearchType.TRACK),
+            questionary.Choice("Specific song",       value=SearchType.SONG),
         ]
     ).ask()
 
@@ -535,7 +526,7 @@ def main():
     elif download_type == SearchType.ALBUM:
         album_name = Prompt.ask("[green]Album name[/green]").strip()
         search_query = f"{artist_name} – {album_name}"
-    elif download_type == SearchType.TRACK:
+    elif download_type == SearchType.SONG:
         track_name = Prompt.ask("[green]Track name[/green]").strip()
         search_query = f"{artist_name} – {track_name}"
 
