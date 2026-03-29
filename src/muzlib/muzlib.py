@@ -345,9 +345,9 @@ class Muzlib():
             track_metadata = json.load(file)
         
         for track_info in track_metadata:
-            self._download_by_track_info(track_info)   
+            self.download_by_track_info(track_info)   
 
-    def _download_by_track_info(self, track_info):
+    def download_by_track_info(self, track_info):
         try:
             id = track_info.get('ytm_id','')
             if not id: return
