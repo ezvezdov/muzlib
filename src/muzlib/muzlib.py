@@ -223,42 +223,39 @@ class Muzlib():
             track_info['cover'] = _get_image(album_details['thumbnails'][-1]['url'])
             track_info['ytm_title'] = f"{track_info['track_artists_str']} - {track['title']}"
 
-            # Download the track
-            self._download_by_track_info(track_info)
-
-            album_metadata.append(track_info)
+            yield track_info
+            
+    
+    def search(self, search_type: SearchType, *, artist_name="", album_name="", song_name=""):
         
-        return album_metadata
-    
-    def search(self, search_term, search_type: SearchType):
-        return self.ytmusic.search(search_term, filter=search_type.value, limit=20)
-    
-    def search_artist(self, artist_name):
-        return self.search(artist_name, SearchType.ARTIST)
-    
-    def search_album(self, artist_name, album_name):
-        return self.search(f"{artist_name} - {album_name}", SearchType.ALBUM)
-    
-    def search_song(self, artist_name, track_name):
-        return self.search(f"{artist_name} - {track_name}", SearchType.SONG)
+        search_query = ""
+        if search_type == SearchType.ARTIST:
+            search_query = artist_name
+        elif search_type == SearchType.ALBUM:
+            search_query = f"{artist_name} – {album_name}"
+        elif search_type == SearchType.SONG:
+            search_query = f"{artist_name} – {song_name}"
+
+        return self.ytmusic.search(search_query, filter=search_type.value, limit=20)
 
     def go_though_search_results(self, search_results, search_type: SearchType):
         for result in search_results:
             if search_type == SearchType.ARTIST:
-                full_name = result['artist']
+                result['title'] = result['artist']
             elif search_type == SearchType.ALBUM:
                 album_artists = [artist['name'] for artist in result['artists']]
                 album_artists_str = ", ".join(album_artists)
-                full_name = album_artists_str + " - " + result['title']
+                result['title'] = album_artists_str + " - " + result['title']
             elif search_type == SearchType.SONG:
                 song_artists = [artist['name'] for artist in result['artists']]
                 song_artists_str = ", ".join(song_artists)
-                full_name = song_artists_str + " - " + result['title']
+                result['title'] = song_artists_str + " - " + result['title']
             else:
                 logging_utils.logging.error(f"Invalid search type: {search_type}")
                 print(f"Invalid search type: {search_type}")
                 return None
             
+            yield result
     
     def get_download_summary(self, search_result, search_type: SearchType):
         track_count = 0
@@ -286,12 +283,14 @@ class Muzlib():
 
         return track_count
     
+
+    def get_track_info(self, search_result, search_type: SearchType):
         if search_type == SearchType.ARTIST:
-            self._get_discography_by_artist_id(search_result['browseId'])
+            yield from self._get_discography_by_artist_id(search_result['browseId'])
         elif search_type == SearchType.ALBUM:
-            self._get_album_metadata(search_result['browseId'])
+            yield from self._get_album_metadata(search_result['browseId'])
         elif search_type == SearchType.SONG:
-            self._get_album_metadata(search_result['album']['id'], single_id=search_result['videoId'], single_name=search_result['title'])
+            yield from self._get_album_metadata(search_result['album']['id'], single_id=search_result['videoId'], single_name=search_result['title'])
         else:
             logging_utils.logging.error(f"Invalid search type: {search_type}")
             print(f"Invalid search type: {search_type}")
