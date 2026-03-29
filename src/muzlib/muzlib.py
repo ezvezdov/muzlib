@@ -491,9 +491,10 @@ def main():
         if questionary.confirm(f"Is this the {search_type.name} you searched for?\n  {selected_result['title']}").ask():
             break
 
-    with console.status(f"[cyan]Downloading {search_query}…[/cyan]"):
-        ml.download_by_search_result(selected_result, download_type)
-        console.print(f"[green]✓ Done![/green]")
+    with console.status(f"[cyan]Retrieving information…[/cyan]"):
+        download_summary = ml.get_download_summary(selected_result, search_type)
+
+
 
 if __name__ == "__main__":
     main()
