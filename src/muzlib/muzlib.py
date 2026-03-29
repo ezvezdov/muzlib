@@ -9,7 +9,6 @@ from enum import Enum
 
 import yt_dlp
 from ytmusicapi import YTMusic
-import questionary
 
 from . import lyrics_utils
 from .tag_utils import tag_utils
@@ -437,6 +436,7 @@ def main():
     from rich.panel import Panel
     from rich.prompt import Prompt
     from rich import print as rprint
+    import questionary
 
     console = Console()
 
