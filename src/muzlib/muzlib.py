@@ -457,7 +457,7 @@ def main():
         return
 
     # Interactive menu instead of free-text input
-    download_type = questionary.select(
+    search_type = questionary.select(
         "What do you want to download?",
         choices=[
             questionary.Choice("Complete discography", value=SearchType.ARTIST),
@@ -467,26 +467,29 @@ def main():
     ).ask()
 
     # If user pressed Ctrl+C
-    if download_type is None:
+    if search_type is None:
         console.print("[yellow]Cancelled.[/yellow]")
         return
 
-    # Ask for artist name in all cases, and album/track name if needed
-    artist_name = Prompt.ask("[green]Artist name[/green]").strip()
+    artist_name, album_name, song_name = "", "", ""
 
-    search_query = None
-    if download_type == SearchType.ARTIST:
-        search_query = artist_name
-    elif download_type == SearchType.ALBUM:
+    # Ask for artist name in all cases, and album/track name if needed
+    if search_type == SearchType.ARTIST:
+        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
+    elif search_type == SearchType.ALBUM:
+        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
         album_name = Prompt.ask("[green]Album name[/green]").strip()
-        search_query = f"{artist_name} – {album_name}"
-    elif download_type == SearchType.SONG:
-        track_name = Prompt.ask("[green]Track name[/green]").strip()
-        search_query = f"{artist_name} – {track_name}"
+    elif search_type == SearchType.SONG:
+        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
+        song_name = Prompt.ask("[green]Track name[/green]").strip()
 
         
-    search_results = ml.search(search_query, download_type)
-    selected_result = ml.go_though_search_results(search_results, download_type)
+    search_results = ml.search(search_type, artist_name=artist_name, album_name=album_name, song_name=song_name)
+
+    selected_result = None
+    for selected_result in ml.go_though_search_results(search_results, search_type):
+        if questionary.confirm(f"Is this the {search_type.name} you searched for?\n  {selected_result['title']}").ask():
+            break
 
     with console.status(f"[cyan]Downloading {search_query}…[/cyan]"):
         ml.download_by_search_result(selected_result, download_type)
