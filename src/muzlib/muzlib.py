@@ -303,57 +303,7 @@ class Muzlib():
                 albums = self.ytmusic.get_artist_albums(artist_details[type]['browseId'], params=None, limit=None)
             
             for album in albums:
-                self._get_album_metadata(album['browseId'])
-
-    
-    def download_artist_discography(self, artist_name, download_top_result=False):
-        artist_id = self._get_artist_id(artist_name, download_top_result=download_top_result)
-        if not artist_id: return
-
-        print(f"Downloading the complete discography of the artist: {self.artists_rename.get(artist_name, artist_name)}")
-
-        self._get_discography_by_artist_id(artist_id)
-
-    
-    def download_album_by_name(self, search_querry, download_top_result=False):
-        results = self.ytmusic.search(query=f"{search_querry}", filter="albums", limit=20)
-
-        album = []
-
-        for album in results:
-            if not download_top_result:
-                album_name = album['title']
-                album_artists = [artist['name'] for artist in album['artists']]
-                album_artists_str = ", ".join(album_artists)
-                album_full_name = album_artists_str + " - " + album_name
-                answer = input(f"Did you search album {album_full_name}? [y/n]: ")
-
-                # Skip current album
-                if answer.lower()[0] != 'y': continue
-            
-            self._get_album_metadata(album['browseId'])
-            break
-
-
-    def download_track_by_name(self, search_term, download_top_result=False):
-        results = self.ytmusic.search(search_term, filter="songs")
-
-        for song in results:
-
-            if not download_top_result:
-                song_name = song['title']
-                song_artists = [artist['name'] for artist in song['artists']]
-                song_artists_str = ", ".join(song_artists)
-                song_full_name = song_artists_str + " - " + song_name
-                answer = input(f"Did you search track {song_full_name}? [y/n]: ")
-
-                # Skip current album
-                if answer.lower()[0] != 'y': continue
-
-            song_id = song['videoId']
-            song_name = song['title']
-            self._get_album_metadata(song['album']['id'], single_id=song_id, single_name=song_name)
-            break
+                yield from self._get_album_metadata(album['browseId'])
 
 
     def backup_library(self):
