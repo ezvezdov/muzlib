@@ -438,8 +438,9 @@ def main():
     console.print(Panel.fit("[bold cyan]🎵 Muzlib Downloader[/bold cyan]", border_style="cyan"))
 
     # Path input with validation
+    default_music_dir = str(files_utils.get_default_music_directory())
     while True:
-        library_path = Prompt.ask("[green]Music library path[/green]")
+        library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
         if library_path.strip():
             break
         console.print("[red]Path cannot be empty.[/red]")
