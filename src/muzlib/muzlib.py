@@ -13,6 +13,7 @@ from ytmusicapi import YTMusic
 from . import lyrics_utils
 from .tag_utils import tag_utils
 from . import logging_utils
+from . import files_utils
 
 
 
@@ -85,13 +86,6 @@ def _get_image(url, retries=3, delay=2):
     logging_utils.logging.warning(f"Failed to download image. Status code: {response.status_code}")
     return {}
 
-def _find_audio_files(directory):
-    extensions = {'.mp3', '.opus'}
-    
-    return [
-        p for p in Path(directory).rglob("*") 
-        if p.suffix.lower() in extensions
-    ]
 
 def _init_track_info():
     track_info = {}
@@ -311,7 +305,7 @@ class Muzlib():
 
     def backup_library(self):
         track_metadata = []
-        audio_files = _find_audio_files(self.library_path)
+        audio_files = files_utils.find_audio_files(self.library_path)
         for audio_path in audio_files:
             track_info = tag_utils.get_tag(str(audio_path))
 
