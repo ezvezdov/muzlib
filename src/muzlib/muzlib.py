@@ -429,8 +429,8 @@ def main():
     from rich.console import Console
     from rich.panel import Panel
     from rich.prompt import Prompt
-    from rich import print as rprint
-    from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, TimeElapsedColumn
+    from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, ProgressColumn
+    from rich.text import Text
     import questionary
 
     console = Console()
@@ -490,6 +490,15 @@ def main():
     with console.status(f"[cyan]Retrieving information…[/cyan]"):
         download_summary = ml.get_download_summary(selected_result, search_type)
 
+    class TimeColumn(ProgressColumn):
+        def render(self, task):
+            elapsed = task.finished_time if task.finished else task.elapsed
+            remaining = task.time_remaining
+
+            elapsed_str = f"{int(elapsed // 3600):01}:{int((elapsed % 3600) // 60):02}:{int(elapsed % 60):02}" if elapsed else "0:00:00"
+            remaining_str = f"{int(remaining // 3600):01}:{int((remaining % 3600) // 60):02}:{int(remaining % 60):02}" if remaining else "?"
+
+            return Text(f"[{elapsed_str}<{remaining_str}]", style="green")
 
     with Progress(
         SpinnerColumn(),
@@ -497,7 +506,7 @@ def main():
         BarColumn(),
         TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
         TextColumn("[cyan][{task.completed}/{task.total}]"),
-        TimeElapsedColumn(),
+        TimeColumn(),
         TextColumn("[dim][{task.fields[track_name]}]"),
     ) as progress:
         task = progress.add_task("Downloading...", total=download_summary, track_name="")
