@@ -13,6 +13,7 @@ dependencies = [
     "rich>=14.3.3",
     "syncedlyrics>=1.0.1",
     "yt-dlp>=2025.12.8",
+    "yt-dlp-ejs>=0.8.0",
     "ytmusicapi>=1.11.3",
 ]
 
