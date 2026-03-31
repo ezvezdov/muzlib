@@ -121,6 +121,10 @@ class Muzlib():
 
         self.extension = "." + codec.lower()
 
+
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        cookie_path = os.path.join(current_dir, 'assets','cookies.txt')
+
         self.ydl_opts = {
             'format': 'bestaudio',
             'outtmpl': '%(id)s.%(ext)s',
@@ -131,7 +135,8 @@ class Muzlib():
                     'preferredquality': '0', # Best quality
             }],
             'quiet': True,
-            'cookiefile': 'assets/cookies.txt'
+            'no_warnings': True,
+            'cookiefile': cookie_path
         }
 
         self.use_db = skip_downloaded

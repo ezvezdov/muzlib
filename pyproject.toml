@@ -22,6 +22,9 @@ muzlib = "muzlib.muzlib:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+muzlib = ["*.txt"]
+
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
