@@ -522,16 +522,27 @@ def main():
     ) as progress:
         task = progress.add_task("Downloading...", total=download_summary, track_name="")
 
+        common_path = None
         for track_info in ml.get_track_info(selected_result, search_type):
             song_name = f"{track_info['track_artists_str']} - {track_info['track_name']}"
             progress.update(task, track_name=song_name)
 
             path = ml.download_by_track_info(track_info)
             downloaded_song_name = path.split(".")[-2]
-            
+
             progress.print(f"[green]Downloaded:[/green] {downloaded_song_name}")
             progress.update(task, advance=1)
 
+            if common_path is None:
+                common_path = path
+            else:
+                common_path = os.path.commonpath([common_path, path])
+
+
+        progress.update(task, track_name="Done!")
+
+    common_uri = pathlib.Path(common_path).as_uri()
+    console.print(f"Files are stored at [magenta][link={common_uri}]{common_path}[/link][/magenta]", highlight=False)
     console.print(f"[green]✓ Done![/green]")
 
 if __name__ == "__main__":
