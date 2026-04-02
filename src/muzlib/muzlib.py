@@ -4,8 +4,8 @@ import json
 import time
 import shutil
 import base64
+import pathlib
 import requests
-from pathlib import Path
 from enum import Enum
 
 import yt_dlp
@@ -525,7 +525,11 @@ def main():
         for track_info in ml.get_track_info(selected_result, search_type):
             song_name = f"{track_info['track_artists_str']} - {track_info['track_name']}"
             progress.update(task, track_name=song_name)
-            ml.download_by_track_info(track_info)
+
+            path = ml.download_by_track_info(track_info)
+            downloaded_song_name = path.split(".")[-2]
+            
+            progress.print(f"[green]Downloaded:[/green] {downloaded_song_name}")
             progress.update(task, advance=1)
 
     console.print(f"[green]✓ Done![/green]")
