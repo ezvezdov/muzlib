@@ -262,7 +262,6 @@ class Muzlib():
 
         if search_type == SearchType.ARTIST:
             artist_details = self.ytmusic.get_artist(search_result['browseId'])
-            print(artist_details['songs'])
             for album_type in ["albums", "singles"]:
                 if not album_type in artist_details: continue
 
@@ -527,16 +526,14 @@ def main():
             song_name = f"{track_info['track_artists_str']} - {track_info['track_name']}"
             progress.update(task, track_name=song_name)
 
-            path = ml.download_by_track_info(track_info)
-            downloaded_song_name = path.split(".")[-2]
+            song_path_str = ml.download_by_track_info(track_info)
 
-            progress.print(f"[green]Downloaded:[/green] {downloaded_song_name}")
-            progress.update(task, advance=1)
+            song_path = pathlib.Path(song_path_str)
 
             if common_path is None:
-                common_path = path
+                common_path = str(song_path.parent)
             else:
-                common_path = os.path.commonpath([common_path, path])
+                common_path = os.path.commonpath([common_path, str(song_path.parent)])
 
 
         progress.update(task, track_name="Done!")
