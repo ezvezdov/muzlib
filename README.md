@@ -5,6 +5,13 @@ Music is downloaded from YouTube, and music tags are constructed using data from
 
 # Instalation
 
+## Arch Linux \[AUR\]
+You can install `python-muzlib` from AUR using your favorite AUR helper, for example:
+```bash
+yay -S python-muzlib
+```
+
+## From PyPI
 Ensure that you have installed [FFmpeg](https://ffmpeg.org/download.html).
 
 ```bash
