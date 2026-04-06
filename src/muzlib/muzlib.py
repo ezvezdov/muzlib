@@ -529,6 +529,10 @@ def main():
             song_path_str = ml.download_by_track_info(track_info)
 
             song_path = pathlib.Path(song_path_str)
+            song_uri = pathlib.Path(song_path).as_uri()
+            progress.print(f"[green]Downloaded:[/green] [link={song_uri}]{song_name}[/link]")
+            
+            progress.update(task, advance=1, track_name="")
 
             if common_path is None:
                 common_path = str(song_path.parent)
