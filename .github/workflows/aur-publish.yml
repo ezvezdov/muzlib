@@ -1,0 +1,36 @@
+name: Publish to AUR
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get release version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Update PKGBUILD version and checksum
+        run: |
+          # Update pkgver
+          sed -i "s/^pkgver=.*/pkgver=${{ steps.version.outputs.VERSION }}/" PKGBUILD
+          # Reset pkgrel
+          sed -i "s/^pkgrel=.*/pkgrel=1/" PKGBUILD
+          # Fetch new sha256sum
+          URL="https://files.pythonhosted.org/packages/source/m/muzlib/muzlib-${{ steps.version.outputs.VERSION }}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          sed -i "s/^sha256sums=.*/sha256sums=('$SHA')/" PKGBUILD
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v3
+        with:
+          pkgname: python-muzlib
+          pkgbuild: .deploy/linux/PKGBUILD
+          commit_username: ${{ github.repository_owner }}
+          commit_email: ezvezdov22@gmail.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: "Update to ${{ github.ref_name }}"
