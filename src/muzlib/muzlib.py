@@ -38,9 +38,6 @@ def _get_feat_artists(track_name):
 
     return []
 
-def _replace_slash(str):
-    return str.replace("/","⁄")
-
 def _sanitize_filename(filename, replacement="_"):
     """
     Remove or replace unsupported characters in a filename.
@@ -212,7 +209,7 @@ class Muzlib():
                 # if track['title'] != single_name and track_info['ytm_id'] != single_id:
                 #     continue
 
-            track_info['track_artists'] = [_replace_slash(self._artist_rename(artist['name'])) for artist in track['artists']] + _get_feat_artists(track['title'])
+            track_info['track_artists'] = [self._artist_rename(artist['name']) for artist in track['artists']] + _get_feat_artists(track['title'])
             track_info['track_artists_str'] = ", ".join(track_info['track_artists'])
             track_info['release_date'] = album_details['year'] if 'year' in album_details else ''
 
@@ -222,7 +219,7 @@ class Muzlib():
                 track_info['track_number'] = track['trackNumber']
                 track_info['total_tracks'] = album_details['trackCount']
 
-            track_info['album_artists'] = [_replace_slash(self._artist_rename(artist['name'])) for artist in album_details['artists']] + _get_feat_artists(track_info['album_name'])
+            track_info['album_artists'] = [self._artist_rename(artist['name']) for artist in album_details['artists']] + _get_feat_artists(track_info['album_name'])
             track_info['lyrics'] = lyrics_utils.get_lyrics(track_info['track_name'], track_info['track_artists_str'], ytmusic=self.ytmusic, id=track_info['ytm_id'])
             track_info['cover'] = _get_image(album_details['thumbnails'][-1]['url'])
             track_info['ytm_title'] = f"{track_info['track_artists_str']} - {track['title']}"
@@ -389,7 +386,7 @@ class Muzlib():
         file_path = os.path.join(self.tmp_path, f"{id}{self.extension}")
 
         # Specify filename
-        new_filename = _sanitize_filename(_replace_slash(track_info['track_artists_str'] + " - " + track_info['track_name']))
+        new_filename = _sanitize_filename(track_info['track_artists_str'] + " - " + track_info['track_name'])
         if track_info['track_number']:
             new_filename = f"{track_info['track_number']}. {new_filename}"
 
@@ -397,7 +394,7 @@ class Muzlib():
 
         album_dir = ''
         if track_info['total_tracks']:
-            album_dir = _sanitize_filename(_replace_slash(f"[{track_info['release_date']}] {track_info['album_name']}"))
+            album_dir = _sanitize_filename(f"[{track_info['release_date']}] {track_info['album_name']}")
 
         # Join path components
         new_path = os.path.join(artist_dir, album_dir, new_filename)
