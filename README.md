@@ -21,17 +21,53 @@ pip install muzlib
 ```
 
 # Usage
-
-You can simply download discography of artist (YouTube API by default).
-![Examople of usage ](assets/usage.gif)
-
-This script creates a simple database (`.muzlib/db.json`) to track downloaded tracks, allowing you to update an artist's discography without re-downloading existing tracks.
-
-## Available clases
-
-There is only one (for now ) classe that can be used:
-1. `muzlib(library_path: str, skip_downloaded=False)`: library class that uses YouTube Music metadata (100% accuracy, but sometimes poor quality metadata)
-
+ 
+Muzlib can be run directly from the command line. When launched without arguments, it starts an interactive prompt guiding you through the download process. You can also pass arguments to skip prompts entirely.
+ 
+```
+usage: muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
+              [--artist ARTIST] [--album ALBUM] [--song SONG]
+              [--non_interactive]
+```
+ 
+## Arguments
+ 
+| Argument | Short | Description |
+|---|---|---|
+| `--help` | `-h` | Show help message and exit. |
+| `--library_path PATH` | `-l` | Root directory to save downloaded music. Defaults to your OS standard Music folder. |
+| `--download_type {album,artist,song}` | `-d` | Scope of the download: `artist` (full discography), `album` (specific release), or `song` (single track). |
+| `--artist ARTIST` | | Target artist's name. Highly recommended for all download types to ensure accurate search results. |
+| `--album ALBUM` | | Target album's title. Use alongside `--artist` when `--download_type` is `album`. |
+| `--song SONG` | | Target song's title. Use alongside `--artist` when `--download_type` is `song`. |
+| `--non_interactive` | | Bypass all user prompts and automatically download the top search result. Requires `--download_type` to be set. |
+ 
+## Examples
+ 
+### Interactive mode
+launches a menu to guide you through the download
+```bash
+muzlib-cli
+```
+![Example of usage ](assets/usage.gif)
+ 
+### Download an artist's full discography non-interactively
+```bash
+muzlib-cli -d artist --artist "Ludwig Göransson" --non_interactive
+```
+ 
+### Download a specific album
+```bash
+muzlib-cli -d album --artist "Ludwig Göransson" --album "Oppenheimer" --non_interactive
+```
+ 
+### Download a single song into a custom library folder
+```bash
+muzlib-cli -l ~/Music -d song --artist "Ludwig Göransson" --song "Can You Hear The Music" --non_interactive
+```
+ 
+> [!NOTE]
+> `--non_interactive` requires `--download_type` to be specified, otherwise muzlib will exit with an error.
 ## Available methods
 
 ### Downloading artist's discography

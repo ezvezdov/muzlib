@@ -6,6 +6,7 @@ import shutil
 import base64
 import pathlib
 import requests
+import argparse
 from enum import Enum
 
 import yt_dlp
@@ -483,17 +484,40 @@ def main():
     from rich.text import Text
     import questionary
 
+    parser = argparse.ArgumentParser(description="Muzlib Downloader")
+    parser.add_argument("-l", "--library_path", type=str, default="", 
+        help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
+    parser.add_argument("-d", "--download_type", type=str, choices=['album', 'artist', 'song'],
+        help="Scope of the download: 'artist' (full discography), 'album' (specific release), or 'song' (single track).")
+    parser.add_argument("--artist", type=str, default="",
+        help="Target artist's name. Highly recommended for all download types to ensure accurate search results.")
+    parser.add_argument("--album", type=str, default="",
+        help="Target album's title. Use alongside --artist when --download_type is 'album'.")
+    parser.add_argument("--song", type=str, default="",
+        help="Target song's title. Use alongside --artist when --download_type is 'song'.")
+    parser.add_argument("--non_interactive", action="store_true",
+        help="Bypass all user prompts and automatically download the top search result. Requires --download_type to be set.")
+    args = parser.parse_args()
+
+    if args.non_interactive and not args.download_type:
+        print("Error: --non_interactive flag requires at least --download_type to be specified.")
+        exit(1)
+
+
     console = Console()
 
     console.print(Panel.fit("[bold cyan]🎵 Muzlib Downloader[/bold cyan]", border_style="cyan"))
 
     # Path input with validation
     default_music_dir = str(files_utils.get_default_music_directory())
-    while True:
-        library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
-        if library_path.strip():
-            break
-        console.print("[red]Path cannot be empty.[/red]")
+    if not args.library_path and not args.non_interactive:
+        while True:
+            library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
+            if library_path.strip():
+                break
+            console.print("[red]Path cannot be empty.[/red]")
+    else:
+        library_path = args.library_path if args.library_path else default_music_dir
 
     # Try to init Muzlib
     try:
@@ -503,37 +527,46 @@ def main():
         return
 
     # Interactive menu instead of free-text input
-    search_type = questionary.select(
-        "What do you want to download?",
-        choices=[
-            questionary.Choice("Complete discography", value=SearchType.ARTIST),
-            questionary.Choice("Specific album",       value=SearchType.ALBUM),
-            questionary.Choice("Specific song",       value=SearchType.SONG),
-        ]
-    ).ask()
+    if not args.download_type:
+        search_type = questionary.select(
+            "What do you want to download?",
+            choices=[
+                questionary.Choice("Complete discography", value=SearchType.ARTIST),
+                questionary.Choice("Specific album",       value=SearchType.ALBUM),
+                questionary.Choice("Specific song",       value=SearchType.SONG),
+            ]
+        ).ask()
 
-    # If user pressed Ctrl+C
-    if search_type is None:
-        console.print("[yellow]Cancelled.[/yellow]")
-        return
+        # If user pressed Ctrl+C
+        if search_type is None:
+            console.print("[yellow]Cancelled.[/yellow]")
+            return
+    else:
+        search_type = SearchType(f"{args.download_type}s")
 
-    artist_name, album_name, song_name = "", "", ""
+    artist_name, album_name, song_name = args.artist, args.album, args.song
 
     # Ask for artist name in all cases, and album/track name if needed
-    if search_type == SearchType.ARTIST:
-        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
-    elif search_type == SearchType.ALBUM:
-        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
-        album_name = Prompt.ask("[green]Album name[/green]").strip()
-    elif search_type == SearchType.SONG:
-        artist_name = Prompt.ask("[green]Artist name[/green]").strip()
-        song_name = Prompt.ask("[green]Track name[/green]").strip()
+    if not args.non_interactive:
+        if search_type in {SearchType.ARTIST, SearchType.ALBUM, SearchType.SONG} and not artist_name:
+            artist_name = Prompt.ask("[green]Artist name[/green]")
+        if search_type == SearchType.ALBUM and not album_name:
+            album_name = Prompt.ask("[green]Album name[/green]")
+        if search_type == SearchType.SONG and not song_name:
+            song_name = Prompt.ask("[green]Track name[/green]")
+    
+    # Post-process inputs
+    artist_name = artist_name.strip()
+    album_name = album_name.strip()
+    song_name = song_name.strip()
 
         
     search_results = ml.search(search_type, artist_name=artist_name, album_name=album_name, song_name=song_name)
 
     selected_result = None
     for selected_result in ml.go_though_search_results(search_results, search_type):
+        if args.non_interactive:
+            break
         if questionary.confirm(f"Is this the {search_type.name.lower()} you searched for?\n  {selected_result['title']}").ask():
             break
 
