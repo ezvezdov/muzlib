@@ -25,9 +25,9 @@ pip install muzlib
 Muzlib can be run directly from the command line. When launched without arguments, it starts an interactive prompt guiding you through the download process. You can also pass arguments to skip prompts entirely.
  
 ```
-usage: muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
-              [--artist ARTIST] [--album ALBUM] [--song SONG]
-              [--non_interactive]
+muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
+        [--artist ARTIST] [--album ALBUM] [--song SONG]
+        [--non_interactive]
 ```
  
 ## Arguments
