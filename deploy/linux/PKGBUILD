@@ -15,6 +15,7 @@ depends=(
     'yt-dlp-ejs'
     'python-ytmusicapi'
     'ffmpeg'
+    'deno'
 )
 makedepends=('python-build' 'python-installer' 'python-setuptools' 'python-wheel')
 license=('GPL-3.0-or-later')
