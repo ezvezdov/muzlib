@@ -102,7 +102,7 @@ def get_lyrics_ytm(ytmusic, videoId: str):
     return lyrics_object
     
 
-def get_lyrics(track_name: str, artists_names: str, ytmusic=None, id=None) -> str:
+def get_lyrics(track_name: str, artists_names: str, ytmusic=None, video_id=None) -> str:
     """
     Retrieves the best available lyrics for a track, prioritizing synchronized formats.
 
@@ -120,7 +120,7 @@ def get_lyrics(track_name: str, artists_names: str, ytmusic=None, id=None) -> st
         artists_names (str): The name(s) of the artist(s) associated with the track.
         ytmusic (ytmusicapi.YTMusic, optional): An initialized YouTube Music client. 
             Defaults to None.
-        id (str, optional): The unique YouTube Music video ID for the track. 
+        video_id (str, optional): The unique YouTube Music video ID for the track. 
             Defaults to None.
 
     Returns:
@@ -131,8 +131,8 @@ def get_lyrics(track_name: str, artists_names: str, ytmusic=None, id=None) -> st
     lyrics_object = {}
 
     # Search for synced lyrics from YTM
-    if not ytmusic is None and not id is None:
-        lyrics_object = get_lyrics_ytm(ytmusic, id)
+    if ytmusic is not None and video_id is not None:
+        lyrics_object = get_lyrics_ytm(ytmusic, video_id)
         if lyrics_object and lyrics_object['hasTimestamps']:
             logging_utils.logging.debug(f"Lyrics: synchronized lyrics saved for {artists_names} - {track_name}. Source: YTM.")
             return lyrics_object['lyrics'].rstrip()

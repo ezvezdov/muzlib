@@ -145,7 +145,7 @@ class TestGetLyrics:
         mock_get_ytm.return_value = {'lyrics': '[00:10.0]YTM Synced \n', 'hasTimestamps': True}
 
         # Act
-        result = get_lyrics("Track", "Artist", ytmusic=ytmusic_mock, id="123")
+        result = get_lyrics("Track", "Artist", ytmusic=ytmusic_mock, video_id="123")
 
         # Assert
         assert result == "[00:10.0]YTM Synced"
@@ -177,7 +177,7 @@ class TestGetLyrics:
         mock_synced_search.return_value = None  # Force external synced to fail
 
         # Act
-        result = get_lyrics("Track", "Artist", ytmusic=ytmusic_mock, id="123")
+        result = get_lyrics("Track", "Artist", ytmusic=ytmusic_mock, video_id="123")
 
         # Assert
         assert result == "YTM Plain"
