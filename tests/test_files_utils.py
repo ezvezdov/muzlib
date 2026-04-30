@@ -1,6 +1,6 @@
+"""Unit and integration tests for the Muzlib file system utilities."""
+
 import os
-import sys
-import pytest
 import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
@@ -20,10 +20,10 @@ class TestGetDefaultMusicDirectory:
         """Test Linux behavior when XDG user directory is successfully found."""
         # Arrange: subprocess returns bytes, just like the real OS call
         mock_check_output.return_value = b"/mocked/linux/music\n"
-        
+
         # Act
         result = get_default_music_directory()
-        
+
         # Assert
         assert result == Path("/mocked/linux/music/Muzlib")
         mock_check_output.assert_called_once_with(['xdg-user-dir', 'MUSIC'])
@@ -34,12 +34,12 @@ class TestGetDefaultMusicDirectory:
     def test_linux_fallback_on_exception(self, mock_path_home, mock_check_output):
         """Test Linux fallback if the XDG command fails or isn't installed."""
         # Arrange
-        mock_check_output.side_effect = Exception("xdg-user-dir command not found")
+        mock_check_output.side_effect = FileNotFoundError("xdg-user-dir command not found")
         mock_path_home.return_value = Path("/fake/home")
-        
+
         # Act
         result = get_default_music_directory()
-        
+
         # Assert
         assert result == Path("/fake/home/Music/Muzlib")
 
@@ -52,10 +52,10 @@ class TestGetDefaultMusicDirectory:
         """Test macOS behavior which safely defaults to the home directory."""
         # Arrange
         mock_path_home.return_value = Path("/Users/FakeUser")
-        
+
         # Act
         result = get_default_music_directory()
-        
+
         # Assert
         assert result == Path("/Users/FakeUser/Music/Muzlib")
 
@@ -63,17 +63,15 @@ class TestGetDefaultMusicDirectory:
     # WINDOWS TESTS
     # ---------------------------------------------------------
     @patch("muzlib.files_utils.sys.platform", "win32")
-    @patch.dict("sys.modules", {"winreg": MagicMock()})
-    def test_windows_success(self):
+    @patch("muzlib.files_utils.winreg", create=True)
+    def test_windows_success(self, mock_winreg):
         """Test Windows behavior when the Registry key is successfully read."""
-        # Arrange: Grab the fake winreg module we just injected into sys.modules
-        mock_winreg = sys.modules["winreg"]
-        
+
         # Mock the context manager (the 'with' statement) and the registry query
         mock_key = MagicMock()
         mock_winreg.OpenKey.return_value.__enter__.return_value = mock_key
         mock_winreg.QueryValueEx.return_value = ("C:/Mocked/Windows/Music", 1)
-        
+
         # Act
         result = get_default_music_directory()
 
@@ -85,18 +83,17 @@ class TestGetDefaultMusicDirectory:
         mock_winreg.QueryValueEx.assert_called_once_with(mock_key, "My Music")
 
     @patch("muzlib.files_utils.sys.platform", "win32")
-    @patch.dict("sys.modules", {"winreg": MagicMock()})
     @patch("muzlib.files_utils.Path.home")
-    def test_windows_fallback_on_exception(self, mock_path_home):
+    @patch("muzlib.files_utils.winreg", create=True)
+    def test_windows_fallback_on_exception(self, mock_winreg, mock_path_home):
         """Test Windows fallback if reading the Registry fails."""
         # Arrange
-        mock_winreg = sys.modules["winreg"]
-        mock_winreg.OpenKey.side_effect = Exception("Registry key not found")
+        mock_winreg.OpenKey.side_effect = OSError("Registry key not found")
         mock_path_home.return_value = Path("C:/Users/FakeUser")
-        
+
         # Act
         result = get_default_music_directory()
-        
+
         # Assert
         assert result == Path("C:/Users/FakeUser/Music/Muzlib")
 
@@ -109,10 +106,10 @@ class TestGetDefaultMusicDirectory:
         """Test fallback behavior for unsupported operating systems."""
         # Arrange
         mock_path_home.return_value = Path("/fake/home")
-        
+
         # Act
         result = get_default_music_directory()
-        
+
         # Assert
         assert result == Path("/fake/home/Music/Muzlib")
 
@@ -127,15 +124,15 @@ class TestGetTmpFolder:
     @patch("tempfile.gettempdir")
     def test_get_tmp_folder_logic(self, mock_gettempdir, mock_makedirs):
         """Test that the function calculates the right path and calls os.makedirs."""
-        
+
         # Arrange: Fake the system's temp directory path
         fake_temp_dir = '/fake/sys/tmp' if os.name == 'posix' else 'C:\\fake\\temp'
         mock_gettempdir.return_value = fake_temp_dir
         expected_path = os.path.join(fake_temp_dir, 'muzlib')
-        
+
         # Act
         result = get_tmp_folder()
-        
+
         # Assert
         assert result == expected_path
         mock_makedirs.assert_called_once_with(expected_path, exist_ok=True)
@@ -145,7 +142,7 @@ class TestGetTmpFolder:
     # ---------------------------------------------------------
     def test_get_tmp_folder_creation(self):
         """Test that the directory is actually created on the file system."""
-        
+
         # Act
         result_path = get_tmp_folder()
 
@@ -169,7 +166,7 @@ class TestFindAudioFiles:
         (tmp_path / "song1.mp3").touch()
         (tmp_path / "song2.opus").touch()
         (tmp_path / "ignore_me.txt").touch()  # Should be ignored
-        
+
         # Create a subdirectory with more files
         sub_dir = tmp_path / "albums"
         sub_dir.mkdir()
@@ -181,17 +178,17 @@ class TestFindAudioFiles:
         result = find_audio_files(str(tmp_path))
 
         assert len(result) == 4
-        assert (tmp_path / "song1.mp3") in result
-        assert (tmp_path / "song2.opus") in result
-        assert (sub_dir / "song3.mp3") in result
-        assert (sub_dir / "song4.OPUS") in result
+        assert tmp_path/"song1.mp3" in result
+        assert tmp_path/"song2.opus" in result
+        assert sub_dir/"song3.mp3" in result
+        assert sub_dir/"song4.OPUS" in result
 
     def test_find_audio_files_empty_directory(self, tmp_path):
         """Test behavior when the directory has no matching files."""
 
         # Setup directory with no audio files
         (tmp_path / "document.pdf").touch()
-        
+
         assert find_audio_files(str(tmp_path)) == []
 
     def test_find_audio_files_nonexistent_directory(self):
