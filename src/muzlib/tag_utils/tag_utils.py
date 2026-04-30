@@ -7,6 +7,9 @@ read/write operations to the appropriate format-specific submodules (`mp3` or `o
 providing a single interface for all tag manipulation in the application.
 """
 
+from muzlib.tag_utils import mp3
+from muzlib.tag_utils import opus
+
 def add_tag(audio_path:str, track_info:dict) -> None:
     """
     Embeds metadata tags into an audio file by routing to the appropriate format handler.
@@ -47,10 +50,8 @@ def add_tag(audio_path:str, track_info:dict) -> None:
     """
 
     if audio_path.endswith('.mp3'):
-        from . import mp3
         mp3.add_tag(audio_path, track_info)
     elif audio_path.endswith('.opus'):
-        from . import opus
         opus.add_tag(audio_path, track_info)
 
 def get_tag(audio_path:str) -> dict:
@@ -91,10 +92,8 @@ def get_tag(audio_path:str) -> dict:
     """
 
     if audio_path.endswith('.mp3'):
-        from . import mp3
         return mp3.get_tag(audio_path)
     if audio_path.endswith('.opus'):
-        from . import opus
         return opus.get_tag(audio_path)
-    
+
     return {}

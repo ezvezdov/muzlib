@@ -1,6 +1,7 @@
-import pytest
+"""Unit tests for the Ogg Opus metadata manipulation utilities."""
 import base64
 from unittest.mock import MagicMock, patch
+import pytest
 from mutagen import MutagenError
 
 # Update the import path to where your actual opus.py is located
@@ -32,7 +33,7 @@ class TestAddTagOpus:
         """Test that all tags and cover art are correctly mapped and saved."""
         mock_audio = MagicMock()
         mock_oggopus.return_value = mock_audio
-        
+
         mock_picture_instance = MagicMock()
         mock_picture_instance.write.return_value = b"encoded_binary_metadata_block"
         mock_picture_class.return_value = mock_picture_instance
@@ -49,7 +50,7 @@ class TestAddTagOpus:
         mock_audio.__setitem__.assert_any_call('title', 'Opus Song')
         mock_audio.__setitem__.assert_any_call('artist', ['Opus Artist'])
         mock_audio.__setitem__.assert_any_call('date', '2024')
-        
+
         # Check specialized Picture block encoding
         expected_picture_b64 = base64.b64encode(b"encoded_binary_metadata_block").decode("ascii")
         mock_audio.__setitem__.assert_any_call("metadata_block_picture", [expected_picture_b64])
@@ -59,7 +60,7 @@ class TestAddTagOpus:
         """Test that passing a dictionary without necessary fields raises a KeyError."""
         mock_audio = MagicMock()
         mock_oggopus.return_value = mock_audio
-        
+
         # A deliberately incomplete dictionary missing 'track_name', 'track_artists', etc.
         incomplete_info = {
             'ytm_id': '12345',
@@ -72,7 +73,7 @@ class TestAddTagOpus:
 
         # Verify that the KeyError was specifically about 'track_name'
         assert 'track_name' in str(exc_info.value)
-        
+
         # Ensure the file was not accidentally saved after the crash
         mock_audio.save.assert_not_called()
 
@@ -82,7 +83,7 @@ class TestAddTagOpus:
         """Test that an error in cover art embedding doesn't crash the whole save."""
         mock_audio = MagicMock()
         mock_oggopus.return_value = mock_audio
-        
+
         # '!!!not-base64!!!' will naturally throw a binascii.Error when decoded.
         info = {
             'ytm_id': '123',
@@ -99,7 +100,7 @@ class TestAddTagOpus:
         # Check assignment
         mock_audio.__setitem__.assert_any_call('ytm_id', '123')
         mock_audio.save.assert_called_once()
-        
+
         assert any("Error embedding art" in call.args[0] for call in mock_print.call_args_list)
 
 class TestGetTagOpus:
@@ -109,13 +110,13 @@ class TestGetTagOpus:
     @patch("muzlib.tag_utils.opus.OggOpus")
     def test_get_tag_opus_success_full(self, mock_oggopus, mock_picture_class):
         """Test extraction when all Vorbis comments and cover art are present."""
-        
+
         # 1. Arrange
         mock_audio = MagicMock()
-        
+
         # Create a valid base64 string for the mock tags
         valid_b64_block = base64.b64encode(b"dummy_block").decode('ascii')
-        
+
         mock_tags = {
             'ytm_id': ['opus_vid_123'],
             'ytm_title': ['Opus YTM Title'],
@@ -145,10 +146,10 @@ class TestGetTagOpus:
         assert result['track_name'] == 'Opus Song Title'
         assert result['track_artists'] == ['Artist 1', 'Artist 2']
         assert result['track_artists_str'] == 'Artist 1, Artist 2'
-        assert result['release_date'] == '2024' 
+        assert result['release_date'] == '2024'
         assert result['track_number'] == '03'
         assert result['lyrics'] == 'Ogg lyrics content'
-        
+
         # Verify cover art base64 encoding
         expected_cover = base64.b64encode(b"raw_image_binary_data").decode('utf-8')
         assert result['cover'] == expected_cover
@@ -156,7 +157,7 @@ class TestGetTagOpus:
     @patch("muzlib.tag_utils.opus.OggOpus")
     def test_get_tag_opus_missing_tags(self, mock_oggopus):
         """Test that missing tags return default empty values."""
-        
+
         # Arrange
         mock_audio = MagicMock()
         mock_audio.tags = {} # No tags present
@@ -175,7 +176,7 @@ class TestGetTagOpus:
     @patch("muzlib.tag_utils.opus.OggOpus")
     def test_get_tag_opus_load_failure(self, mock_oggopus):
         """Test that a file load error returns an empty dictionary."""
-        
+
         # Arrange
         mock_oggopus.side_effect = OSError("Critical load error")
 
@@ -183,19 +184,19 @@ class TestGetTagOpus:
         result = get_tag("corrupt.opus")
 
         # Assert
-        assert result == {}
+        assert not result
 
     @patch("builtins.print")
     @patch("muzlib.tag_utils.opus.Picture")
     @patch("muzlib.tag_utils.opus.OggOpus")
     def test_get_tag_opus_picture_decode_error(self, mock_oggopus, mock_picture_class, mock_print):
         """Test that a failure in picture decoding doesn't crash the tag extraction."""
-        
+
         # Arrange
         mock_audio = MagicMock()
         mock_audio.tags = {'metadata_block_picture': ['corrupt_data']}
         mock_oggopus.return_value = mock_audio
-        
+
         # Simulate Picture class failing to parse the decoded base64 data
         mock_picture_class.side_effect = MutagenError("Invalid metadata block")
 

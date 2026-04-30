@@ -1,5 +1,7 @@
+"""Unit tests for the Muzlib tag dispatcher utilities."""
+
+from unittest.mock import patch
 import pytest
-from unittest.mock import patch, MagicMock
 
 # Import the dispatcher function
 # Adjust the import path based on your actual file structure
@@ -21,9 +23,9 @@ class TestAddTag:
     def test_dispatch_to_mp3(self, mock_mp3_add, sample_info):
         """Test that .mp3 files are routed to the mp3 submodule."""
         path = "music/song.mp3"
-        
+
         add_tag(path, sample_info)
-        
+
         # Verify mp3.add_tag was called once with the correct arguments
         mock_mp3_add.assert_called_once_with(path, sample_info)
 
@@ -31,9 +33,9 @@ class TestAddTag:
     def test_dispatch_to_opus(self, mock_opus_add, sample_info):
         """Test that .opus files are routed to the opus submodule."""
         path = "music/audio.opus"
-        
+
         add_tag(path, sample_info)
-        
+
         # Verify opus.add_tag was called once with the correct arguments
         mock_opus_add.assert_called_once_with(path, sample_info)
 
@@ -42,9 +44,9 @@ class TestAddTag:
     def test_unsupported_format_ignored(self, mock_opus_add, mock_mp3_add, sample_info):
         """Test that unsupported extensions do nothing and don't crash."""
         path = "music/report.pdf"
-        
+
         add_tag(path, sample_info)
-        
+
         # Neither handler should be called
         mock_mp3_add.assert_not_called()
         mock_opus_add.assert_not_called()
@@ -56,9 +58,9 @@ class TestAddTag:
         Note: Your current function uses .endswith('.mp3') which is case-sensitive.
         """
         path = "music/SONG.MP3"
-        
+
         add_tag(path, sample_info)
-        
+
         # Based on your current code, .endswith('.mp3') will return False for '.MP3'
         mock_mp3_add.assert_not_called()
 
@@ -72,10 +74,10 @@ class TestGetTag:
         path = "music/song.mp3"
         expected_result = {'track_name': 'Test MP3 Song', 'ytm_id': '123'}
         mock_mp3_get.return_value = expected_result
-        
+
         # Act
         result = get_tag(path)
-        
+
         # Assert
         mock_mp3_get.assert_called_once_with(path)
         assert result == expected_result
@@ -87,10 +89,10 @@ class TestGetTag:
         path = "music/audio.opus"
         expected_result = {'track_name': 'Test Opus Song', 'ytm_id': '456'}
         mock_opus_get.return_value = expected_result
-        
+
         # Act
         result = get_tag(path)
-        
+
         # Assert
         mock_opus_get.assert_called_once_with(path)
         assert result == expected_result
@@ -101,12 +103,12 @@ class TestGetTag:
         """Test that unsupported extensions return an empty dictionary."""
         # Arrange
         path = "music/document.pdf"
-        
+
         # Act
         result = get_tag(path)
-        
+
         # Assert
-        assert result == {}
+        assert not result
         mock_mp3_get.assert_not_called()
         mock_opus_get.assert_not_called()
 
@@ -118,10 +120,10 @@ class TestGetTag:
         """
         # Arrange
         path = "music/SONG.MP3"
-        
+
         # Act
         result = get_tag(path)
-        
+
         # Assert
-        assert result == {}
+        assert not result
         mock_mp3_get.assert_not_called()

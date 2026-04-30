@@ -1,6 +1,8 @@
-import pytest
+"""Unit tests for the MP3 metadata manipulation utilities."""
+
 import base64
 from unittest.mock import MagicMock, patch, ANY, PropertyMock
+import pytest
 
 from mutagen import MutagenError
 from muzlib.tag_utils.mp3 import add_tag, get_tag
@@ -46,7 +48,7 @@ class TestAddTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_add_tag_success_all_fields(self, mock_mp3_class, mock_exists, full_track_info):
         """Test that all ID3 tags are correctly assigned when full data is provided."""
-        
+
         # Arrange
         mock_exists.return_value = True  # Fake the file existing on disk
         mock_audio = MagicMock()
@@ -64,7 +66,7 @@ class TestAddTagMP3:
             'TXXX:ytm_id', 'TXXX:ytm_title', 'TIT2', 'TPE1', 'TDRC', 
             'TPE2', 'TALB', 'TRCK', 'USLT', 'APIC'
         ]
-        
+
         for key in expected_keys:
             assert key in assigned_keys, f"Expected ID3 frame {key} was not set."
 
@@ -74,7 +76,7 @@ class TestAddTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_add_tag_success_minimal_fields(self, mock_mp3_class, mock_exists, minimal_track_info):
         """Test that optional ID3 tags are skipped when data is empty or None."""
-        
+
         # Arrange
         mock_exists.return_value = True
         mock_audio = MagicMock()
@@ -85,11 +87,11 @@ class TestAddTagMP3:
 
         # Assert
         assigned_keys = [call.args[0] for call in mock_audio.__setitem__.call_args_list]
-        
+
         expected_keys = ['TXXX:ytm_id', 'TIT2', 'TPE1', 'TDRC', 'TPE2']
         for key in expected_keys:
             assert key in assigned_keys
-            
+
         skipped_keys = ['TXXX:ytm_title', 'TALB', 'TRCK', 'USLT', 'APIC']
         for key in skipped_keys:
             assert key not in assigned_keys
@@ -101,7 +103,7 @@ class TestAddTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_add_tag_exception_handling(self, mock_mp3_class, mock_exists, mock_print):
         """Test that it catches file loading errors (like corrupt files) and aborts safely."""
-        
+
         # Arrange
         mock_exists.return_value = True
         mock_mp3_class.side_effect = MutagenError("Corrupt file data")  # Updated to specific exception
@@ -113,7 +115,7 @@ class TestAddTagMP3:
         # Assert
         mock_print.assert_called_once()
         assert "Error loading file corrupt_file.mp3" in mock_print.call_args[0][0]
-        
+
         # It should exit before deleting or saving
         mock_audio.delete.assert_not_called()
         mock_audio.save.assert_not_called()
@@ -125,10 +127,10 @@ class TestGetTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_get_tag_success_full_metadata(self, mock_mp3_class):
         """Test extraction when all tags and cover art are present."""
-        
+
         # 1. Arrange: Create a mock audio object that behaves like a dict
         mock_audio = MagicMock()
-        
+
         # Mocking TXXX, TIT2, TALB etc. (usually they have a .text list)
         mock_audio.__contains__.side_effect = lambda k: True
         mock_audio.__getitem__.side_effect = {
@@ -165,7 +167,7 @@ class TestGetTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_get_tag_empty_file(self, mock_mp3_class):
         """Test that missing tags return empty strings instead of crashing."""
-        
+
         # Arrange: Mock audio object where 'in' always returns False
         mock_audio = MagicMock()
         mock_audio.__contains__.return_value = False
@@ -185,7 +187,7 @@ class TestGetTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_get_tag_load_error(self, mock_mp3_class, mock_print):
         """Test behavior when the file cannot be loaded (e.g. not an MP3)."""
-        
+
         # Arrange
         mock_mp3_class.side_effect = OSError("File not found or invalid") # Updated to specific exception
 
@@ -193,7 +195,7 @@ class TestGetTagMP3:
         result = get_tag("invalid.txt")
 
         # Assert
-        assert result == {} # Fixed bug: function returns {} on error, not None
+        assert not result
         mock_print.assert_called_once()
         assert "Error loading file" in mock_print.call_args[0][0]
 
@@ -201,16 +203,16 @@ class TestGetTagMP3:
     @patch("muzlib.tag_utils.mp3.MP3")
     def test_get_tag_cover_encoding_error(self, mock_mp3_class, mock_print):
         """Test that a failure in cover art encoding doesn't crash the whole function."""
-        
+
         # Arrange
         mock_audio = MagicMock()
         mock_audio.__contains__.side_effect = lambda k: k == 'APIC:cover'
-        
+
         # Force an error during base64 encoding by providing non-bytes data
         mock_apic = MagicMock()
         type(mock_apic).data = PropertyMock(side_effect=TypeError("Expected bytes"))
         mock_audio.__getitem__.return_value = mock_apic
-        
+
         mock_mp3_class.return_value = mock_audio
 
         # Act
@@ -218,6 +220,6 @@ class TestGetTagMP3:
 
         # Assert
         assert result['cover'] == ''
-        
+
         print_output = mock_print.call_args[0][0]
         assert "Error encoding cover art" in print_output
