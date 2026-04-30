@@ -1,16 +1,41 @@
-# File was generated using LLM
 import base64
 from mutagen.oggopus import OggOpus
 from mutagen.flac import Picture
 
-def add_tag(audio_path, track_info):
+def add_tag(audio_path:str, track_info:dict) -> None:
     """
-    Adds or updates Vorbis Comment tags for an Opus file.
+    Overwrites the metadata tags of an Ogg Opus file with the provided track information.
+
+    WARNING: This function is destructive to existing metadata. It completely 
+    clears all current Vorbis comments on the file before writing the new ones 
+    provided in the `track_info` dictionary.
+
+    This function maps standard dictionary keys to Vorbis comment fields (e.g., 
+    'title', 'artist', 'album'). It also embeds custom tags for YouTube Music 
+    IDs and handles the specialized base64 encoding required to embed cover art 
+    into an Ogg/FLAC `metadata_block_picture` field.
 
     Args:
-        audio_path (str): Path to the Opus file.
-        track_info (dict): Dictionary containing track metadata.
+        audio_path (str): The file path to the target Ogg Opus file.
+        track_info (dict): A dictionary containing the new metadata to embed. 
+            Expected keys include:
+                - 'ytm_id' (str): Custom YouTube Music ID.
+                - 'ytm_title' (str): Custom YouTube Music title.
+                - 'track_name' (str): Song title ('title').
+                - 'track_artists' (list of str): List of track artists ('artist').
+                - 'album_artists' (list of str): List of album artists ('albumartist').
+                - 'album_name' (str): Album title ('album').
+                - 'release_date' (str/int): Release date/year ('date').
+                - 'lyrics' (str): Lyrics string ('lyrics').
+                - 'track_number' (str/int): Track position ('tracknumber').
+                - 'total_tracks' (str/int): Total tracks on album ('tracktotal').
+                - 'cover' (str): Base64-encoded string of the album art.
+
+    Returns:
+        None: The function modifies and saves the Opus file in-place. It will 
+        print an error to the console and return early if the file cannot be loaded.
     """
+    
     # Load the Opus file
     try:
         audio = OggOpus(audio_path)
@@ -77,9 +102,36 @@ def add_tag(audio_path, track_info):
     audio.save()
 
 
-def get_tag(audio_path):
+def get_tag(audio_path:str) -> dict:
     """
-    Reads Vorbis Comment tags from an Opus file.
+    Extracts metadata and Vorbis comments from an Ogg Opus file into a structured dictionary.
+
+    This function safely attempts to read an Opus file and parse its standard tags 
+    (like title, artist, and album), custom tags (like YouTube Music IDs), and 
+    embedded cover art. Since Vorbis comments natively store all values as lists, 
+    this function flattens single-value tags (like title or ID) while preserving 
+    multi-value tags (like artists). If the file cannot be read, it safely 
+    returns an empty dictionary.
+
+    Args:
+        audio_path (str): The file path to the target Ogg Opus file.
+
+    Returns:
+        dict: A dictionary containing the extracted track information. Returns an 
+            empty dictionary `{}` if the file fails to load. Otherwise, it 
+            contains the following keys (defaulting to '' or [] if missing):
+                - 'ytm_id' (str): Custom YouTube Music ID.
+                - 'ytm_title' (str): Custom YouTube Music title.
+                - 'track_name' (str): The song title ('title').
+                - 'track_artists' (list of str): List of track artists ('artist').
+                - 'track_artists_str' (str): Artists joined by a comma and space.
+                - 'album_artists' (list of str): List of album artists ('albumartist').
+                - 'release_date' (str): The 4-digit release year ('date').
+                - 'album_name' (str): The album title ('album').
+                - 'track_number' (str): The track's number on the album ('tracknumber').
+                - 'total_tracks' (str): Total number of tracks on the album ('tracktotal').
+                - 'lyrics' (str): Lyrics string ('lyrics').
+                - 'cover' (str): Base64-encoded string of the album art.
     """
 
     # Load the Opus file
