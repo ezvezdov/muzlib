@@ -12,6 +12,11 @@ import sys
 from pathlib import Path
 import tempfile
 
+if sys.platform == 'linux':
+    import subprocess
+elif sys.platform == 'win32':
+    import winreg
+
 def get_default_music_directory():
     """
     Retrieves the platform-specific default music directory for the 'Muzlib' application.
@@ -37,13 +42,12 @@ def get_default_music_directory():
 
     # Linux
     if sys.platform == 'linux':
-        import subprocess
         try:
             # Query the standard XDG user directory system
             result = subprocess.check_output(['xdg-user-dir', 'MUSIC'])
             return Path(result.decode('utf-8').strip()) / "Muzlib"
-        except Exception:
-            pass
+        except (subprocess.CalledProcessError, FileNotFoundError) as e:
+            print(f"Warning: Could not determine Music directory via xdg-user-dir. Falling back to ~/Music/Muzlib. Error: {e}")
 
     # macOS (Darwin)
     elif sys.platform == 'darwin':
@@ -52,15 +56,14 @@ def get_default_music_directory():
 
     # Windows
     elif sys.platform == 'win32':
-        import winreg
         try:
             # Query the Windows Registry for the actual mapped folder
             sub_key = r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders"
             with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
                 music_path = winreg.QueryValueEx(key, "My Music")[0]
                 return Path(music_path) / "Muzlib"
-        except Exception:
-            pass
+        except OSError as e:
+            print(f"Warning: Could not determine Music directory via Windows Registry. Falling back to ~/Music/Muzlib. Error: {e}")
 
     # Default fallback for anything else
     return Path.home() / "Music" / "Muzlib"
