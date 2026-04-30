@@ -68,7 +68,11 @@ def get_lyrics_ytm(ytmusic, videoId: str):
     
     lyrics_object = {}
 
-    watch_playlist = ytmusic.get_watch_playlist(videoId)
+    try:
+        watch_playlist = ytmusic.get_watch_playlist(videoId)
+    except Exception:
+        logging_utils.logging.error(f"ERROR: Failed to fetch watch playlist during lyrics search (YouTube) for video ID {videoId}.")
+        return None
 
     lyrics_browseId = watch_playlist.get('lyrics',None)
     if lyrics_browseId is None: return None
