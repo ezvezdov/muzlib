@@ -103,7 +103,6 @@ def find_audio_files(directory: str) -> list[Path]:
         [PosixPath('my_music/song1.mp3'), PosixPath('my_music/albums/song2.opus')]
     """
 
-    # """"Find audio files in the given directory and its subdirectories."""
     extensions = {'.mp3', '.opus'}
 
     return [
