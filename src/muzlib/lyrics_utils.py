@@ -1,8 +1,8 @@
-import os
 import syncedlyrics
 
 from . import logging_utils
 from .tag_utils import tag_utils
+from .files_utils import find_audio_files
 
 def _convert_to_timestamp(ms: int) -> str:
     """
@@ -208,3 +208,8 @@ def add_lyrics_library(library_path:str) -> None:
         None: This function processes the audio files in-place and does not 
         return a value.
     """
+
+    audio_files = find_audio_files(library_path)
+    
+    for path in audio_files:
+        add_lyrics(str(path))
