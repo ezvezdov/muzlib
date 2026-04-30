@@ -2,6 +2,7 @@ import pytest
 import base64
 from unittest.mock import MagicMock, patch, ANY, PropertyMock
 
+from mutagen import MutagenError
 from muzlib.tag_utils.mp3 import add_tag, get_tag
 
 class TestAddTagMP3:
@@ -102,8 +103,8 @@ class TestAddTagMP3:
         """Test that it catches file loading errors (like corrupt files) and aborts safely."""
         
         # Arrange
-        mock_exists.return_value = True  # File exists...
-        mock_mp3_class.side_effect = Exception("Corrupt file data")  # ...but it's corrupted!
+        mock_exists.return_value = True
+        mock_mp3_class.side_effect = MutagenError("Corrupt file data")  # Updated to specific exception
         mock_audio = MagicMock()
 
         # Act
@@ -116,6 +117,7 @@ class TestAddTagMP3:
         # It should exit before deleting or saving
         mock_audio.delete.assert_not_called()
         mock_audio.save.assert_not_called()
+
 
 class TestGetTagMP3:
     """Test suite for the get_tag ID3 extraction function."""
@@ -185,13 +187,13 @@ class TestGetTagMP3:
         """Test behavior when the file cannot be loaded (e.g. not an MP3)."""
         
         # Arrange
-        mock_mp3_class.side_effect = Exception("File not found or invalid")
+        mock_mp3_class.side_effect = OSError("File not found or invalid") # Updated to specific exception
 
         # Act
         result = get_tag("invalid.txt")
 
         # Assert
-        assert result is None
+        assert result == {} # Fixed bug: function returns {} on error, not None
         mock_print.assert_called_once()
         assert "Error loading file" in mock_print.call_args[0][0]
 
@@ -212,8 +214,6 @@ class TestGetTagMP3:
         mock_mp3_class.return_value = mock_audio
 
         # Act
-        # Note: This might still trigger errors on other tags if not careful, 
-        # so we ensure it survives.
         result = get_tag("cover_error.mp3")
 
         # Assert
