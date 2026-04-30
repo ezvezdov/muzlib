@@ -8,6 +8,7 @@ front cover art embedding.
 """
 
 import base64
+from mutagen import MutagenError
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TDRC, TRCK, USLT, APIC, TXXX
 
@@ -46,10 +47,10 @@ def add_tag(audio_path: str, track_info: dict) -> None:
     # Load the MP3 file
     try:
         audio = MP3(audio_path, ID3=ID3)
-    except Exception as e:
+    except (MutagenError, OSError) as e:
         print(f"Error loading file {audio_path}: {e}")
         return
-    
+
     # Clear all existing tags
     audio.delete()
 
@@ -58,7 +59,7 @@ def add_tag(audio_path: str, track_info: dict) -> None:
 
     if track_info['ytm_title']:
         audio["TXXX:ytm_title"] = TXXX(encoding=3, desc="ytm_title", text=track_info['ytm_title'])
-    
+
     audio['TIT2'] = TIT2(encoding=3, text=track_info['track_name'])  # Track Name
     audio['TPE1'] = TPE1(encoding=3, text=track_info['track_artists'])  # Track Artists
     audio['TDRC'] = TDRC(encoding=3, text=track_info['release_date'])  # Release Date
@@ -69,7 +70,7 @@ def add_tag(audio_path: str, track_info: dict) -> None:
         audio['TALB'] = TALB(encoding=3, text=track_info['album_name'])  # Album Name
         if track_info['track_number']:
             audio['TRCK'] = TRCK(encoding=3, text=f"{track_info['track_number']}/{track_info['total_tracks']}")  # Track Number / Total Tracks
-    
+
     if track_info['lyrics']:
         audio['USLT'] = USLT(encoding=3, lang='XXX', desc='', text=track_info['lyrics'])  # Lyrics
 
@@ -81,7 +82,7 @@ def add_tag(audio_path: str, track_info: dict) -> None:
                 desc='cover',
                 data=base64.b64decode(track_info['cover']),  # Image data
             )
-        
+
     # Save changes
     audio.save()
 
@@ -126,9 +127,9 @@ def get_tag(audio_path: str) -> dict:
     # Load the MP3 file
     try:
         audio = MP3(audio_path, ID3=ID3)
-    except Exception as e:
+    except (MutagenError, OSError) as e:
         print(f"Error loading file {audio_path}: {e}")
-        return
+        return {}
 
     track_info = {}
 
@@ -148,7 +149,7 @@ def get_tag(audio_path: str) -> dict:
     if 'APIC:cover' in audio:
         try:
             track_info['cover'] = base64.b64encode(audio['APIC:cover'].data).decode('utf-8')
-        except Exception as e:
+        except (AttributeError, TypeError, UnicodeDecodeError) as e:
             print(f"Error encoding cover art: {e}")
 
     return track_info
