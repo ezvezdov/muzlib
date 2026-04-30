@@ -2,8 +2,6 @@ import base64
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TDRC, TRCK, USLT, APIC, TXXX
 
-
-
 def add_tag(audio_path: str, track_info: dict) -> None:
     """
     Overwrites the ID3 metadata tags of an MP3 file with the provided track information.
