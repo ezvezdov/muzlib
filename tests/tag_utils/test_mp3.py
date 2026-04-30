@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch, ANY, PropertyMock
 
 from muzlib.tag_utils.mp3 import add_tag, get_tag
 
-class TestAddTag:
+class TestAddTagMP3:
     """Test suite for the add_tag ID3 manipulation function."""
 
     @pytest.fixture
@@ -117,7 +117,7 @@ class TestAddTag:
         mock_audio.delete.assert_not_called()
         mock_audio.save.assert_not_called()
 
-class TestGetTag:
+class TestGetTagMP3:
     """Test suite for the get_tag ID3 extraction function."""
 
     @patch("muzlib.tag_utils.mp3.MP3")
