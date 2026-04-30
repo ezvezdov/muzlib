@@ -138,6 +138,11 @@ def get_tag(audio_path: str) -> dict:
     track_info['track_number'] = audio['TRCK'][0].split('/')[0] if 'TRCK' in audio else '' # Track Number
     track_info['total_tracks'] = audio['TRCK'][0].split('/')[-1] if 'TRCK' in audio else '' # Total Tracks
     track_info['lyrics'] = audio['USLT::XXX'].text if 'USLT::XXX' in audio else '' # Lyrics
-    track_info['cover'] = base64.b64encode(audio['APIC:cover'].data).decode('utf-8') if 'APIC:cover' in audio else ''
-    
+    track_info['cover'] = ''
+    if 'APIC:cover' in audio:
+        try:
+            track_info['cover'] = base64.b64encode(audio['APIC:cover'].data).decode('utf-8')
+        except Exception as e:
+            print(f"Error encoding cover art: {e}")
+
     return track_info
