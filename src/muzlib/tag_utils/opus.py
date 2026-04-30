@@ -8,6 +8,8 @@ embed base64 cover art into a `metadata_block_picture` block.
 """
 
 import base64
+import binascii
+from mutagen import MutagenError
 from mutagen.oggopus import OggOpus
 from mutagen.flac import Picture
 
@@ -44,11 +46,11 @@ def add_tag(audio_path:str, track_info:dict) -> None:
         None: The function modifies and saves the Opus file in-place. It will 
         print an error to the console and return early if the file cannot be loaded.
     """
-    
+
     # Load the Opus file
     try:
         audio = OggOpus(audio_path)
-    except Exception as e:
+    except (MutagenError, OSError) as e:
         print(f"Error loading file {audio_path}: {e}")
         return
 
@@ -59,35 +61,25 @@ def add_tag(audio_path:str, track_info:dict) -> None:
     # Reload to ensure clean tag block
     audio = OggOpus(audio_path)
 
-    if track_info.get('ytm_id'):
-        audio['ytm_id'] = str(track_info['ytm_id'])
+    audio['ytm_id'] = str(track_info['ytm_id'])
 
     if track_info.get('ytm_title'):
         audio['ytm_title'] = str(track_info['ytm_title'])
 
-    if track_info.get('track_name'):
-        audio['title'] = track_info['track_name']
+    audio['title'] = track_info['track_name']
+    audio['artist'] = track_info['track_artists']
+    audio['date'] = str(track_info['release_date'])
+    audio['albumartist'] = track_info['album_artists']
 
-    if track_info.get('track_artists'):
-        audio['artist'] = track_info['track_artists']
-
-    if track_info.get('album_artists'):
-        audio['albumartist'] = track_info['album_artists']
-
-    if track_info.get('album_name'):
+    if track_info['album_name']:
         audio['album'] = track_info['album_name']
-
-    if track_info.get('release_date'):
-        audio['date'] = str(track_info['release_date'])
+        if track_info.get('track_number'):
+            audio['tracknumber'] = str(track_info['track_number'])
+        if track_info.get('total_tracks'):
+            audio['tracktotal'] = str(track_info['total_tracks'])
 
     if track_info.get('lyrics'):
         audio['lyrics'] = track_info['lyrics']
-
-    if track_info.get('track_number'):
-        audio['tracknumber'] = str(track_info['track_number'])
-
-    if track_info.get('total_tracks'):
-        audio['tracktotal'] = str(track_info['total_tracks'])
 
     if track_info.get('cover'):
         try:
@@ -104,7 +96,7 @@ def add_tag(audio_path:str, track_info:dict) -> None:
             encoded_data = base64.b64encode(picture_data).decode("ascii")
 
             audio["metadata_block_picture"] = [encoded_data]
-        except Exception as e:
+        except (TypeError, ValueError, binascii.Error, MutagenError) as e:
             print(f"Error embedding art: {e}")
 
     # Save changes
@@ -146,7 +138,8 @@ def get_tag(audio_path:str) -> dict:
     # Load the Opus file
     try:
         audio = OggOpus(audio_path)
-    except Exception:
+    except (MutagenError, OSError) as e:
+        print(f"Error loading file {audio_path}: {e}")
         return {}
 
     track_info = {}
@@ -176,7 +169,7 @@ def get_tag(audio_path:str) -> dict:
     if 'metadata_block_picture' in tags:
         try:
             track_info['cover'] = base64.b64encode(Picture(base64.b64decode(tags['metadata_block_picture'][0])).data).decode('utf-8')
-        except Exception as e:
+        except (TypeError, ValueError, binascii.Error, MutagenError) as e:
             print(f"Error encoding cover art: {e}")
 
     return track_info
