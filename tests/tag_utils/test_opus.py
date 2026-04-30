@@ -1,6 +1,7 @@
 import pytest
 import base64
 from unittest.mock import MagicMock, patch
+from mutagen import MutagenError
 
 # Update the import path to where your actual opus.py is located
 from muzlib.tag_utils.opus import add_tag, get_tag
@@ -44,7 +45,6 @@ class TestAddTagOpus:
         mock_audio.save.assert_called_once()
 
         # Check assignments instead of retrieval
-        # .call_args_list returns [call(key, value), ...]
         mock_audio.__setitem__.assert_any_call('ytm_id', 'opus123')
         mock_audio.__setitem__.assert_any_call('title', 'Opus Song')
         mock_audio.__setitem__.assert_any_call('artist', ['Opus Artist'])
@@ -54,13 +54,45 @@ class TestAddTagOpus:
         expected_picture_b64 = base64.b64encode(b"encoded_binary_metadata_block").decode("ascii")
         mock_audio.__setitem__.assert_any_call("metadata_block_picture", [expected_picture_b64])
 
+    @patch("muzlib.tag_utils.opus.OggOpus")
+    def test_add_tag_opus_missing_required_fields(self, mock_oggopus):
+        """Test that passing a dictionary without necessary fields raises a KeyError."""
+        mock_audio = MagicMock()
+        mock_oggopus.return_value = mock_audio
+        
+        # A deliberately incomplete dictionary missing 'track_name', 'track_artists', etc.
+        incomplete_info = {
+            'ytm_id': '12345',
+            # 'track_name' is missing!
+        }
+
+        # We expect the function to raise a KeyError because track_name is required
+        with pytest.raises(KeyError) as exc_info:
+            add_tag("test_missing_fields.opus", incomplete_info)
+
+        # Verify that the KeyError was specifically about 'track_name'
+        assert 'track_name' in str(exc_info.value)
+        
+        # Ensure the file was not accidentally saved after the crash
+        mock_audio.save.assert_not_called()
+
     @patch("builtins.print")
     @patch("muzlib.tag_utils.opus.OggOpus")
     def test_add_tag_opus_picture_error(self, mock_oggopus, mock_print):
         """Test that an error in cover art embedding doesn't crash the whole save."""
         mock_audio = MagicMock()
         mock_oggopus.return_value = mock_audio
-        info = {'ytm_id': '123', 'cover': '!!!not-base64!!!'}
+        
+        # '!!!not-base64!!!' will naturally throw a binascii.Error when decoded.
+        info = {
+            'ytm_id': '123',
+            'track_name': 'Test Track',
+            'track_artists': ['Test Artist'],
+            'release_date': '2024',
+            'album_artists': ['Test Album Artist'],
+            'album_name': 'Test Album',
+            'cover': '!!!not-base64!!!'
+        }
 
         add_tag("test.opus", info)
 
@@ -145,7 +177,7 @@ class TestGetTagOpus:
         """Test that a file load error returns an empty dictionary."""
         
         # Arrange
-        mock_oggopus.side_effect = Exception("Critical load error")
+        mock_oggopus.side_effect = OSError("Critical load error")
 
         # Act
         result = get_tag("corrupt.opus")
@@ -165,7 +197,7 @@ class TestGetTagOpus:
         mock_oggopus.return_value = mock_audio
         
         # Simulate Picture class failing to parse the decoded base64 data
-        mock_picture_class.side_effect = Exception("Invalid metadata block")
+        mock_picture_class.side_effect = MutagenError("Invalid metadata block")
 
         # Act
         result = get_tag("bad_art.opus")
