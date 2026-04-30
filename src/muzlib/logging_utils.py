@@ -1,3 +1,5 @@
+"""Logging configuration utility for the Muzlib application."""
+
 import os
 import logging
 
