@@ -18,29 +18,23 @@ def add_tag(audio_path, track_info):
         print(f"Error loading file {audio_path}: {e}")
         return
 
+
     # Clear all existing tags
     audio.delete()
 
     # Reload to ensure clean tag block
     audio = OggOpus(audio_path)
 
-    # --- Text Tags ---
-    # Vorbis comments are flexible. We map standard ID3 concepts to Vorbis keys.
-    # Note: Mutagen handles list values (multiple artists) automatically.
-
-    # Custom IDs
     if track_info.get('ytm_id'):
         audio['ytm_id'] = str(track_info['ytm_id'])
 
     if track_info.get('ytm_title'):
         audio['ytm_title'] = str(track_info['ytm_title'])
 
-    # Standard Metadata
     if track_info.get('track_name'):
         audio['title'] = track_info['track_name']
 
     if track_info.get('track_artists'):
-        # Vorbis handles lists naturally
         audio['artist'] = track_info['track_artists']
 
     if track_info.get('album_artists'):
@@ -50,26 +44,20 @@ def add_tag(audio_path, track_info):
         audio['album'] = track_info['album_name']
 
     if track_info.get('release_date'):
-        # 'date' or 'year' are both commonly used. 'date' is standard.
         audio['date'] = str(track_info['release_date'])
 
     if track_info.get('lyrics'):
         audio['lyrics'] = track_info['lyrics']
 
-    # Track Numbers
-    # Opus usually separates number and total
     if track_info.get('track_number'):
         audio['tracknumber'] = str(track_info['track_number'])
 
     if track_info.get('total_tracks'):
         audio['tracktotal'] = str(track_info['total_tracks'])
 
-    # --- Cover Art ---
-    # Opus uses the FLAC METADATA_BLOCK_PICTURE standard
     if track_info.get('cover'):
         try:
             picture = Picture()
-            # The input 'cover' is expected to be a base64 string of the image bytes
             picture.data = base64.b64decode(track_info['cover'])
             picture.type = 3  # Cover (front)
             picture.mime = "image/jpeg"
@@ -78,7 +66,6 @@ def add_tag(audio_path, track_info):
             picture.height = 0
             picture.depth = 0
 
-            # Encode the picture structure to base64 for the Vorbis comment
             picture_data = picture.write()
             encoded_data = base64.b64encode(picture_data).decode("ascii")
 
@@ -94,6 +81,7 @@ def get_tag(audio_path):
     """
     Reads Vorbis Comment tags from an Opus file.
     """
+
     # Load the Opus file
     try:
         audio = OggOpus(audio_path)
@@ -107,39 +95,27 @@ def get_tag(audio_path):
     def get_first(key):
         return tags[key][0] if key in tags else ''
 
-    # Fetch info
     track_info['ytm_id'] = get_first('ytm_id')
     track_info['ytm_title'] = get_first('ytm_title')
-
     track_info['track_name'] = get_first('title')
-
-    # Artists (keep as list)
     track_info['track_artists'] = tags['artist'] if 'artist' in tags else []
     track_info['track_artists_str'] = ", ".join(track_info['track_artists'])
-
     track_info['album_artists'] = tags['albumartist'] if 'albumartist' in tags else []
 
-    # Release Date (Usually YYYY-MM-DD or just YYYY)
     date_str = get_first('date')
     track_info['release_date'] = date_str[:4] if date_str else ''
 
     track_info['album_name'] = get_first('album')
-
     track_info['track_number'] = get_first('tracknumber')
     track_info['total_tracks'] = get_first('tracktotal')
-
     track_info['lyrics'] = get_first('lyrics')
 
-    # Fetch Cover Art
-    # We must reverse the FLAC picture encoding logic
+    # Cover Art
     track_info['cover'] = ''
     if 'metadata_block_picture' in tags:
         try:
-            b64_data = tags['metadata_block_picture'][0]
-            picture = Picture(base64.b64decode(b64_data))
-            # Return the base64 string of the raw image bytes (matching the MP3 util output)
-            track_info['cover'] = base64.b64encode(picture.data).decode('utf-8')
-        except Exception:
-            pass
+            track_info['cover'] = base64.b64encode(Picture(base64.b64decode(tags['metadata_block_picture'][0])).data).decode('utf-8')
+        except Exception as e:
+            print(f"Error encoding cover art: {e}")
 
     return track_info
