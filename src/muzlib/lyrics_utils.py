@@ -167,7 +167,7 @@ def add_lyrics(audio_path:str):
     """
 
     # Extract track name (title) and artist
-    track_info = tag_utils.get_tag_mp3(audio_path)
+    track_info = tag_utils.get_tag(audio_path)
     track_name = track_info['track_name']
     artists_names = track_info['track_artists_str']
     
@@ -188,7 +188,7 @@ def add_lyrics(audio_path:str):
 
     track_info['lyrics'] = lrc
 
-    tag_utils.add_tag_mp3(audio_path,track_info)
+    tag_utils.add_tag(audio_path,track_info)
 
 
 def add_lyrics_library(library_path:str) -> None:
