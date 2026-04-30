@@ -50,7 +50,6 @@ def add_tag(audio_path: str, track_info: dict) -> None:
         print(f"Error loading file {audio_path}: {e}")
         return
     
-
     # Clear all existing tags
     audio.delete()
 
