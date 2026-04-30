@@ -1,39 +1,42 @@
 from muzlib.files_utils import find_audio_files
 
 
-def test_find_audio_files_with_matches(tmp_path):
-    """Test that it correctly finds .mp3 and .opus files."""
+class TestFindAudioFiles:
+    """Test suite for the find_audio_files function."""
 
-    # Set up a temporary directory with various files
-    (tmp_path / "song1.mp3").touch()
-    (tmp_path / "song2.opus").touch()
-    (tmp_path / "ignore_me.txt").touch()  # Should be ignored
-    
-    # Create a subdirectory with more files
-    sub_dir = tmp_path / "albums"
-    sub_dir.mkdir()
-    (sub_dir / "song3.mp3").touch()
-    (sub_dir / "cover.jpg").touch()       # Should be ignored
-    (sub_dir / "song4.OPUS").touch()      # Should handle uppercase extension
+    def test_find_audio_files_with_matches(self, tmp_path):
+        """Test that it correctly finds .mp3 and .opus files."""
 
-    # Run the function on the temporary directory
-    result = find_audio_files(str(tmp_path))
+        # Set up a temporary directory with various files
+        (tmp_path / "song1.mp3").touch()
+        (tmp_path / "song2.opus").touch()
+        (tmp_path / "ignore_me.txt").touch()  # Should be ignored
+        
+        # Create a subdirectory with more files
+        sub_dir = tmp_path / "albums"
+        sub_dir.mkdir()
+        (sub_dir / "song3.mp3").touch()
+        (sub_dir / "cover.jpg").touch()       # Should be ignored
+        (sub_dir / "song4.OPUS").touch()      # Should handle uppercase extension
 
-    assert len(result) == 4
-    assert (tmp_path / "song1.mp3") in result
-    assert (tmp_path / "song2.opus") in result
-    assert (sub_dir / "song3.mp3") in result
-    assert (sub_dir / "song4.OPUS") in result
+        # Run the function on the temporary directory
+        result = find_audio_files(str(tmp_path))
 
-def test_find_audio_files_empty_directory(tmp_path):
-    """Test behavior when the directory has no matching files."""
+        assert len(result) == 4
+        assert (tmp_path / "song1.mp3") in result
+        assert (tmp_path / "song2.opus") in result
+        assert (sub_dir / "song3.mp3") in result
+        assert (sub_dir / "song4.OPUS") in result
 
-    # Setup directory with no audio files
-    (tmp_path / "document.pdf").touch()
-    
-    assert find_audio_files(str(tmp_path)) == []
+    def test_find_audio_files_empty_directory(self, tmp_path):
+        """Test behavior when the directory has no matching files."""
 
-def test_find_audio_files_nonexistent_directory():
-    """Test behavior with a directory that doesn't exist."""
+        # Setup directory with no audio files
+        (tmp_path / "document.pdf").touch()
+        
+        assert find_audio_files(str(tmp_path)) == []
 
-    assert find_audio_files("/path/that/definitely/does/not/exist_12345") == []
+    def test_find_audio_files_nonexistent_directory(self):
+        """Test behavior with a directory that doesn't exist."""
+
+        assert find_audio_files("/path/that/definitely/does/not/exist_12345") == []
