@@ -37,7 +37,12 @@ def add_tag(audio_path: str, track_info: dict) -> None:
     """
 
     # Load the MP3 file
-    audio = MP3(audio_path, ID3=ID3)
+    try:
+        audio = MP3(audio_path, ID3=ID3)
+    except Exception as e:
+        print(f"Error loading file {audio_path}: {e}")
+        return
+    
 
     # Clear all existing tags
     audio.delete()
@@ -113,7 +118,11 @@ def get_tag(audio_path: str) -> dict:
     """
 
     # Load the MP3 file
-    audio = MP3(audio_path, ID3=ID3)
+    try:
+        audio = MP3(audio_path, ID3=ID3)
+    except Exception as e:
+        print(f"Error loading file {audio_path}: {e}")
+        return
 
     track_info = {}
 
