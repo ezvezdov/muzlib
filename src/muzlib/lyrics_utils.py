@@ -1,3 +1,13 @@
+"""
+Lyrics retrieval and embedding utilities for Muzlib.
+
+This module handles the fetching of synchronized (LRC) and unsynchronized lyrics 
+from multiple providers, prioritizing YouTube Music before falling back to external 
+sources like Lrclib, NetEase, and Genius. It provides automated tools to find, format, 
+and embed these lyrics directly into the metadata of individual audio files or 
+entire music libraries.
+"""
+
 import syncedlyrics
 
 from . import logging_utils

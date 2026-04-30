@@ -1,3 +1,12 @@
+"""
+Ogg Opus metadata extraction and embedding utilities.
+
+This module utilizes the `mutagen` library to read and completely overwrite Vorbis 
+comments for Ogg Opus files. It maps standard application dictionary keys to their 
+corresponding Vorbis fields and safely handles the complex encoding required to 
+embed base64 cover art into a `metadata_block_picture` block.
+"""
+
 import base64
 from mutagen.oggopus import OggOpus
 from mutagen.flac import Picture

@@ -1,3 +1,12 @@
+"""
+MP3 metadata extraction and embedding utilities.
+
+This module utilizes the `mutagen` library to safely read and overwrite ID3v2 tags 
+for MP3 files. It manages standard tags (title, artist, album), custom user-defined 
+TXXX tags for YouTube Music tracking, and the decoding of base64 image data for 
+front cover art embedding.
+"""
+
 import base64
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TDRC, TRCK, USLT, APIC, TXXX

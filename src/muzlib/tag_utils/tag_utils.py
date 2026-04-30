@@ -1,3 +1,12 @@
+"""
+Format-agnostic metadata tagging dispatcher.
+
+This module acts as a unified routing utility for extracting and embedding audio 
+metadata. It checks the file extension of the target audio file and delegates the 
+read/write operations to the appropriate format-specific submodules (`mp3` or `opus`), 
+providing a single interface for all tag manipulation in the application.
+"""
+
 def add_tag(audio_path:str, track_info:dict) -> None:
     """
     Embeds metadata tags into an audio file by routing to the appropriate format handler.

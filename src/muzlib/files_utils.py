@@ -1,4 +1,12 @@
-"""Files utilities for Muzlib."""
+"""
+File system operations for the Muzlib application.
+
+This module provides utilities for locating platform-specific default music directories 
+across Windows, macOS, and Linux. It also manages temporary application folders and 
+includes helpers for recursively discovering supported audio files (.mp3 and .opus) 
+within a given directory tree.
+"""
+
 import os
 import sys
 from pathlib import Path
