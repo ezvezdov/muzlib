@@ -6,7 +6,7 @@ from mutagen.id3 import ID3, TIT2, TPE1, TPE2, TALB, TDRC, TRCK, USLT, APIC, TXX
 
 def add_tag(audio_path: str, track_info: dict) -> None:
     """
-    Writes the ID3 metadata tags of an MP3 file with the provided track information.
+    Overwrites the ID3 metadata tags of an MP3 file with the provided track information.
 
     WARNING: This function is destructive to existing metadata. It completely 
     clears all current ID3 tags on the file before writing the new ones provided 
