@@ -75,22 +75,24 @@ def get_lyrics_ytm(ytmusic, videoId: str):
             'hasTimestamps': True
         }
     """
-    
+
     lyrics_object = {}
 
     try:
         watch_playlist = ytmusic.get_watch_playlist(videoId)
-    except Exception:
-        logging_utils.logging.error(f"ERROR: Failed to fetch watch playlist during lyrics search (YouTube) for video ID {videoId}.")
+    except Exception as e: # can fail for dozens of unpredictable reasons, so leave it as a general exception catch
+        logging_utils.logging.error(f"ERROR: Failed to fetch watch playlist during lyrics search (YouTube) for video ID {videoId}. Error: {e}")
         return None
 
     lyrics_browseId = watch_playlist.get('lyrics',None)
-    if lyrics_browseId is None: return None
+    if lyrics_browseId is None:
+        return None
 
     lyrics = ytmusic.get_lyrics(lyrics_browseId)
 
 
-    if lyrics is None: return None
+    if lyrics is None:
+        return None
 
     if lyrics['hasTimestamps']:
         lyrics_object['lyrics'] = "\n".join(f"[{_convert_to_timestamp(line.start_time)}]{line.text}" for line in lyrics['lyrics'])
@@ -98,9 +100,9 @@ def get_lyrics_ytm(ytmusic, videoId: str):
     else:
         lyrics_object['lyrics'] = lyrics['lyrics']
         lyrics_object['hasTimestamps'] = False
-    
+
     return lyrics_object
-    
+
 
 def get_lyrics(track_name: str, artists_names: str, ytmusic=None, video_id=None) -> str:
     """
@@ -180,20 +182,22 @@ def add_lyrics(audio_path:str):
     track_info = tag_utils.get_tag(audio_path)
     track_name = track_info['track_name']
     artists_names = track_info['track_artists_str']
-    
+
     # Skip if there is no information about track
     if not track_name or not artists_names:
         logging_utils.logging.error("ERROR: Unknown title or Artist!")
         return
-    
+
     #  Lyrics already exists
-    if 'lyrics' in track_info and track_info['lyrics']: return
+    if 'lyrics' in track_info and track_info['lyrics']:
+        return
 
     # Get lyrics
     lrc = get_lyrics(track_name, artists_names)
-    
+
     # There is no lyrics for this track
-    if lrc is None: return
+    if lrc is None:
+        return
 
 
     track_info['lyrics'] = lrc
@@ -220,6 +224,6 @@ def add_lyrics_library(library_path:str) -> None:
     """
 
     audio_files = find_audio_files(library_path)
-    
+
     for path in audio_files:
         add_lyrics(str(path))
