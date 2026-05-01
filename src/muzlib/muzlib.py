@@ -231,9 +231,8 @@ class Muzlib():
 
         
     def _artist_rename(self, artist_name):
-        if artist_name in self.artists_rename: return self.artists_rename[artist_name]
-        return artist_name
-    
+        return self.artists_rename.get(artist_name, artist_name)
+
     def _get_album_metadata(self, ytm_album_id, single_id=None, single_name=None):
 
         album_details = self.ytmusic.get_album(ytm_album_id)
