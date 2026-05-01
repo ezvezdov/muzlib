@@ -1,14 +1,15 @@
 import os
 import re
+import sys
 import json
 import time
 import shutil
 import base64
 import pathlib
-import requests
 import argparse
 from enum import Enum
 
+import requests
 import yt_dlp
 from ytmusicapi import YTMusic
 
@@ -111,7 +112,7 @@ def _sanitize_filename(filename:str) -> str:
     filename = re.sub(r'["]', "\'\'", filename)
     filename = re.sub(r'[|]', "∣", filename)
     filename = re.sub(r'[\0]', "", filename)
-    
+
     return filename
 
 
@@ -120,8 +121,8 @@ def _get_image(url, retries=3, delay=2):
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             return base64.b64encode(response.content).decode('utf-8')
-        else:
-            time.sleep(delay)
+
+        time.sleep(delay)
 
     logging_utils.logging.warning(f"Failed to download image. Status code: {response.status_code}")
     return {}
@@ -198,8 +199,8 @@ class Muzlib():
         self.ytmusic = YTMusic()
         self.ydl = yt_dlp.YoutubeDL(self.ydl_opts)
 
-        
-    
+
+
     def _init_library(self):
 
         # Ensure the path ends with a slash (optional)
@@ -229,7 +230,7 @@ class Muzlib():
             with open(self.artists_rename_path, "r", encoding="utf-8") as file:
                 self.artists_rename = json.load(file)
 
-        
+
     def _artist_rename(self, artist_name):
         return self.artists_rename.get(artist_name, artist_name)
 
@@ -269,7 +270,7 @@ class Muzlib():
             yield track_info
 
     def search(self, search_type: SearchType, *, artist_name="", album_name="", song_name=""):
-        
+
         search_query = ""
         if search_type == SearchType.ARTIST:
             search_query = artist_name
@@ -296,34 +297,35 @@ class Muzlib():
                 logging_utils.logging.error(f"Invalid search type: {search_type}")
                 print(f"Invalid search type: {search_type}")
                 return None
-            
+
             yield result
-    
+
     def get_download_summary(self, search_result, search_type: SearchType):
         track_count = 0
 
         if search_type == SearchType.ARTIST:
             artist_details = self.ytmusic.get_artist(search_result['browseId'])
             for album_type in ["albums", "singles"]:
-                if not album_type in artist_details: continue
+                if not album_type in artist_details:
+                    continue
 
                 albums = artist_details[album_type]['results']
 
                 if artist_details[album_type]['browseId']:
                     albums = self.ytmusic.get_artist_albums(artist_details[album_type]['browseId'], params=None, limit=None)
-            
+
                 for album in albums:
                     album_details = self.ytmusic.get_album(album['browseId'])
-                    track_count += album_details['trackCount'] 
-                    
+                    track_count += album_details['trackCount']
+
         elif search_type == SearchType.ALBUM:
             album_details = self.ytmusic.get_album(search_result['browseId'])
-            track_count = album_details['trackCount']   
+            track_count = album_details['trackCount']
         elif search_type == SearchType.SONG:
             track_count = 1
 
         return track_count
-    
+
 
     def get_track_info(self, search_result, search_type: SearchType):
         if search_type == SearchType.ARTIST:
@@ -337,7 +339,7 @@ class Muzlib():
             print(f"Invalid search type: {search_type}")
 
     def _get_discography_by_artist_id(self,artist_id):
-        
+
         artist_details = self.ytmusic.get_artist(artist_id)
 
         for audio_type in ["albums", "singles"]:
@@ -363,16 +365,16 @@ class Muzlib():
             track_info['path'] = name
 
             track_metadata.append(track_info)
-        
+
 
         formatted_timestamp = time.strftime('%Y%m%d%H%M%S', time.localtime())
         backup_path = os.path.join(self.info_path, f'{self._backup_path_prefix}{formatted_timestamp}.json')
 
         with open(backup_path, "w", encoding="utf-8") as file:
             json.dump(track_metadata, file, indent=4, ensure_ascii=False)
-        
+
         return backup_path
-            
+
     def restore_library(self, backup_filepath):
         if not os.path.exists(backup_filepath):
             print(f"File {backup_filepath} doesn't exist.")
@@ -380,23 +382,25 @@ class Muzlib():
         if not os.path.isfile(backup_filepath):
             print(f"File {backup_filepath} is directory.")
             return
-        
+
         track_metadata = []
         with open(backup_filepath, "r", encoding="utf-8") as file:
             track_metadata = json.load(file)
-        
+
         for track_info in track_metadata:
-            self.download_by_track_info(track_info)   
+            self.download_by_track_info(track_info)
 
     def download_by_track_info(self, track_info):
         try:
             track_id = track_info.get('ytm_id','')
-            if not track_id: return
+            if not track_id:
+                return
 
-            if self.use_db and track_id in self.db: return
+            if self.use_db and track_id in self.db:
+                return
 
             self.__download_track_youtube(track_id)
-            
+
             file_path = os.path.join(self.tmp_path, f"{track_id}{self.extension}")
 
             # Add tag to the track
@@ -404,7 +408,7 @@ class Muzlib():
 
             # Rename and move track
             new_path = self.__move_downloaded_track(track_id, track_info)
-            
+
             # Save database
             self.db[track_id] = track_info['track_artists_str'] + " - " + track_info['track_name']
             self.__write_db()
@@ -419,10 +423,10 @@ class Muzlib():
                 missing_track_metadata.append(track_info)
             else:
                 missing_track_metadata = [track_info]
-            
+
             json.dump(missing_track_metadata, open(missing_path, "w", encoding="utf-8"), indent=4, ensure_ascii=False)
             logging_utils.logging.error(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")
-            print(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")            
+            print(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")
 
     def __move_downloaded_track(self, track_id, track_info):
         file_path = os.path.join(self.tmp_path, f"{track_id}{self.extension}")
@@ -463,7 +467,7 @@ class Muzlib():
 
         # Download using yt-dlp
         self.ydl.download([track_url])
-    
+
     def __write_db(self):
         # write database to the db.json file
         with open(self.db_path, "w", encoding="utf-8") as file:
@@ -486,7 +490,7 @@ def main():
     import questionary
 
     parser = argparse.ArgumentParser(description="Muzlib Downloader")
-    parser.add_argument("-l", "--library_path", type=str, default="", 
+    parser.add_argument("-l", "--library_path", type=str, default="",
         help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
     parser.add_argument("-d", "--download_type", type=str, choices=['album', 'artist', 'song'],
         help="Scope of the download: 'artist' (full discography), 'album' (specific release), or 'song' (single track).")
@@ -502,7 +506,7 @@ def main():
 
     if args.non_interactive and not args.download_type:
         print("Error: --non_interactive flag requires at least --download_type to be specified.")
-        exit(1)
+        sys.exit(1)
 
 
     console = Console()
@@ -555,13 +559,13 @@ def main():
             album_name = Prompt.ask("[green]Album name[/green]")
         if search_type == SearchType.SONG and not song_name:
             song_name = Prompt.ask("[green]Track name[/green]")
-    
+
     # Post-process inputs
     artist_name = artist_name.strip()
     album_name = album_name.strip()
     song_name = song_name.strip()
 
-        
+
     search_results = ml.search(search_type, artist_name=artist_name, album_name=album_name, song_name=song_name)
 
     selected_result = None
@@ -571,7 +575,7 @@ def main():
         if questionary.confirm(f"Is this the {search_type.name.lower()} you searched for?\n  {selected_result['title']}").ask():
             break
 
-    with console.status(f"[cyan]Retrieving information…[/cyan]"):
+    with console.status("[cyan]Retrieving information…[/cyan]"):
         download_summary = ml.get_download_summary(selected_result, search_type)
 
     class TimeColumn(ProgressColumn):
@@ -605,7 +609,7 @@ def main():
             song_path = pathlib.Path(song_path_str)
             song_uri = pathlib.Path(song_path).as_uri()
             progress.print(f"[green]Downloaded:[/green] [link={song_uri}]{song_name}[/link]")
-            
+
             progress.update(task, advance=1, track_name="")
 
             if common_path is None:
@@ -618,7 +622,7 @@ def main():
 
     common_uri = pathlib.Path(common_path).as_uri()
     console.print(f"Files are stored at [magenta][link={common_uri}]{common_path}[/link][/magenta]", highlight=False)
-    console.print(f"[green]✓ Done![/green]")
+    console.print("[green]✓ Done![/green]")
 
 if __name__ == "__main__":
     main()
