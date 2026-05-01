@@ -20,7 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
-muzlib-cli = "muzlib.muzlib:main"
+muzlib-cli = "muzlib.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
