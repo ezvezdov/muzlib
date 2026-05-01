@@ -390,23 +390,23 @@ class Muzlib():
 
     def download_by_track_info(self, track_info):
         try:
-            id = track_info.get('ytm_id','')
-            if not id: return
+            track_id = track_info.get('ytm_id','')
+            if not track_id: return
 
-            if self.use_db and id in self.db: return
+            if self.use_db and track_id in self.db: return
 
-            self.__download_track_youtube(id)
+            self.__download_track_youtube(track_id)
             
-            file_path = os.path.join(self.tmp_path, f"{id}{self.extension}")
+            file_path = os.path.join(self.tmp_path, f"{track_id}{self.extension}")
 
             # Add tag to the track
             tag_utils.add_tag(file_path,track_info)
 
             # Rename and move track
-            new_path = self.__move_downloaded_track(id, track_info)
+            new_path = self.__move_downloaded_track(track_id, track_info)
             
             # Save database
-            self.db[id] = track_info['track_artists_str'] + " - " + track_info['track_name']
+            self.db[track_id] = track_info['track_artists_str'] + " - " + track_info['track_name']
             self.__write_db()
 
             return new_path
@@ -424,8 +424,8 @@ class Muzlib():
             logging_utils.logging.error(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")
             print(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")            
 
-    def __move_downloaded_track(self, id, track_info):
-        file_path = os.path.join(self.tmp_path, f"{id}{self.extension}")
+    def __move_downloaded_track(self, track_id, track_info):
+        file_path = os.path.join(self.tmp_path, f"{track_id}{self.extension}")
 
         # Specify filename
         new_filename = _sanitize_filename(track_info['track_artists_str'] + " - " + track_info['track_name'])
