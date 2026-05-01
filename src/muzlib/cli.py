@@ -39,6 +39,24 @@ class TimeColumn(ProgressColumn):
 
 
 def process_arguments():
+    """
+    Parses command-line arguments for the Muzlib Downloader CLI.
+
+    This function configures the argument parser with all available flags for 
+    defining the download scope, target metadata (artist, album, song), output 
+    directory, and interactive behavior. It also enforces dependency validation, 
+    ensuring that non-interactive mode is never run without a defined download type.
+
+    Returns:
+        argparse.Namespace: An object containing the parsed arguments as attributes 
+            (e.g., `args.library_path`, `args.download_type`, `args.artist`).
+
+    Raises:
+        SystemExit: Exits the script with status code 1 if `--non_interactive` is 
+            passed without a corresponding `--download_type`, or if `argparse` 
+            detects invalid command-line inputs.
+    """
+    
     parser = argparse.ArgumentParser(description="Muzlib Downloader")
     parser.add_argument("-l", "--library_path", type=str, default="",
         help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
@@ -63,6 +81,7 @@ def process_arguments():
 def print_welcome_message(console):
     console.print(Panel.fit("[bold cyan]🎵 Muzlib Downloader[/bold cyan]", border_style="cyan"))
 
+
 def ask_library_path(console, default_music_dir):
     while True:
         library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
@@ -72,7 +91,11 @@ def ask_library_path(console, default_music_dir):
 
     return library_path.strip()
 
-def ask_search_type(console):
+def ask_search_type(console, download_type):
+    if download_type:
+        return SearchType(f"{download_type}s")
+
+
     search_type = questionary.select(
         "What do you want to download?",
         choices=[
@@ -85,55 +108,15 @@ def ask_search_type(console):
     # If user pressed Ctrl+C
     if search_type is None:
         console.print("[yellow]Cancelled.[/yellow]")
-        return
+        return None
 
     return search_type
 
-
-def main():
-    """
-    Main CLI entry point for the Muzlib Downloader application.
-
-    This function parses command-line arguments using `argparse`, sets up a rich 
-    terminal UI, prompts the user for interactive selections (unless non-interactive 
-    mode is triggered), and orchestrates the search and download progress loops.
-    """
-
-    # Parse arguments
-    args = process_arguments()
-
-    # Start console
-    console = Console()
-    print_welcome_message(console)
-
-    # Path input with validation
-    default_music_dir = str(files_utils.get_default_music_directory())
-    if not args.library_path and not args.non_interactive:
-        library_path = ask_library_path(console, default_music_dir)
-    else:
-        library_path = args.library_path if args.library_path else default_music_dir
-
-    # Try to init Muzlib
-    try:
-        ml = Muzlib(library_path.strip())
-    except Exception as e:
-        console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
-        return
-
-    # Interactive menu for search type
-    if not args.download_type:
-        search_type = ask_search_type(console)
-    else:
-        search_type = SearchType(f"{args.download_type}s")
-
-    if search_type is None:
-        return
-
-
+def ask_search_information(search_type, args):
     artist_name, album_name, song_name = args.artist, args.album, args.song
 
-    # Ask for artist name in all cases, and album/track name if needed
     if not args.non_interactive:
+        # Ask for artist name in all cases, and album/track name if needed
         if search_type in {SearchType.ARTIST, SearchType.ALBUM, SearchType.SONG} and not artist_name:
             artist_name = Prompt.ask("[green]Artist name[/green]")
         if search_type == SearchType.ALBUM and not album_name:
@@ -141,21 +124,24 @@ def main():
         if search_type == SearchType.SONG and not song_name:
             song_name = Prompt.ask("[green]Track name[/green]")
 
-    # Post-process inputs
     artist_name = artist_name.strip()
     album_name = album_name.strip()
     song_name = song_name.strip()
 
+    return artist_name, album_name, song_name
 
-    search_results = ml.search(search_type, artist_name=artist_name, album_name=album_name, song_name=song_name)
 
+def select_from_search_results(ml, search_results, search_type, is_non_interactive):
     selected_result = None
     for selected_result in ml.go_though_search_results(search_results, search_type):
-        if args.non_interactive:
+        if is_non_interactive:
             break
         if questionary.confirm(f"Is this the {search_type.name.lower()} you searched for?\n  {selected_result['title']}").ask():
             break
 
+    return selected_result
+
+def execute_download_loop(ml, selected_result, search_type, console):
     with console.status("[cyan]Retrieving information…[/cyan]"):
         download_summary = ml.get_download_summary(selected_result, search_type)
 
@@ -188,11 +174,60 @@ def main():
             else:
                 common_path = os.path.commonpath([common_path, str(song_path.parent)])
 
-
         progress.update(task, track_name="Done!")
 
-    common_uri = pathlib.Path(common_path).as_uri()
-    console.print(f"Files are stored at [magenta][link={common_uri}]{common_path}[/link][/magenta]", highlight=False)
+    return common_path
+
+def main():
+    """
+    Main CLI entry point for the Muzlib Downloader application.
+
+    This function parses command-line arguments using `argparse`, sets up a rich 
+    terminal UI, prompts the user for interactive selections (unless non-interactive 
+    mode is triggered), and orchestrates the search and download progress loops.
+    """
+
+    # Parse arguments
+    args = process_arguments()
+
+    # Start console
+    console = Console()
+    print_welcome_message(console)
+
+    # Path input with validation
+    default_music_dir = str(files_utils.get_default_music_directory())
+    if not args.library_path and not args.non_interactive:
+        library_path = ask_library_path(console, default_music_dir)
+    else:
+        library_path = args.library_path if args.library_path else default_music_dir
+
+    # Try to init Muzlib
+    try:
+        ml = Muzlib(library_path.strip())
+    except Exception as e:
+        console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
+        return
+
+    # Interactive menu for search type
+    search_type = ask_search_type(console, args.download_type)
+    if search_type is None:
+        return
+
+
+    # Ask for search information
+    artist_name, album_name, song_name = ask_search_information(search_type, args)
+
+    # Search
+    search_results = ml.search(search_type, artist_name=artist_name, album_name=album_name, song_name=song_name)
+
+    # Select from search results
+    selected_result = select_from_search_results(ml, search_results, search_type, args.non_interactive)
+
+    # Execute download loop
+    common_path = execute_download_loop(ml, selected_result, search_type, console)
+
+    # Exit message
+    console.print(f"Files are stored at [magenta][link={pathlib.Path(common_path).as_uri()}]{common_path}[/link][/magenta]", highlight=False)
     console.print("[green]✓ Done![/green]")
 
 if __name__ == "__main__":
