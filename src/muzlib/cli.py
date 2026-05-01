@@ -1,3 +1,5 @@
+"""Command-line interface (CLI) and main entry point for the Muzlib Downloader."""
+
 import os
 import sys
 import argparse
@@ -56,7 +58,6 @@ def process_arguments():
             passed without a corresponding `--download_type`, or if `argparse` 
             detects invalid command-line inputs.
     """
-    
     parser = argparse.ArgumentParser(description="Muzlib Downloader")
     parser.add_argument("-l", "--library_path", type=str, default="",
         help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
@@ -78,11 +79,43 @@ def process_arguments():
 
     return args
 
-def print_welcome_message(console):
+def print_welcome_message(console: Console):
+    """
+    Prints the stylized welcome banner for the Muzlib Downloader.
+
+    This function uses the `rich` library to display a visually appealing, 
+    cyan-bordered panel containing the application's title. It acts as the 
+    visual entry point for the CLI.
+
+    Args:
+        console (rich.console.Console): The initialized Rich Console object 
+            used to render styled output to the terminal.
+
+    Returns:
+        None: This function produces terminal output but does not return a value.
+    """
     console.print(Panel.fit("[bold cyan]🎵 Muzlib Downloader[/bold cyan]", border_style="cyan"))
 
 
-def ask_library_path(console, default_music_dir):
+def ask_library_path(console: Console, default_music_dir: str) -> str:
+    """
+    Interactively prompts the user for a valid music library path.
+
+    This function utilizes the `rich` library to request a directory path from 
+    the user, providing a default suggestion. It enforces a strict validation 
+    loop, preventing the user from advancing with a blank input and displaying 
+    a styled error message if they try.
+
+    Args:
+        console (rich.console.Console): The initialized Rich Console object used 
+            to render styled error messages to the terminal.
+        default_music_dir (str): The default directory path to display as a 
+            fallback suggestion in the prompt.
+
+    Returns:
+        str: The user-provided directory path, stripped of any leading or 
+            trailing whitespace.
+    """
     while True:
         library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
         if library_path.strip():
@@ -91,7 +124,26 @@ def ask_library_path(console, default_music_dir):
 
     return library_path.strip()
 
-def ask_search_type(console, download_type):
+def ask_search_type(console: Console, download_type: str) -> SearchType:
+    """
+    Determines the target search scope either via pre-defined arguments or interactive prompt.
+
+    If a `download_type` was provided via command-line arguments, this function 
+    bypasses the interactive menu and parses it directly into a `SearchType` Enum. 
+    Otherwise, it utilizes the `questionary` library to display a selectable UI 
+    menu in the terminal. It gracefully handles user cancellations (e.g., Ctrl+C).
+
+    Args:
+        console (rich.console.Console): The initialized Rich Console object used 
+            to print styled messages (like the cancellation warning).
+        download_type (str): A string indicating a pre-selected download type 
+            (e.g., 'artist', 'album', 'song'). Pass an empty string `""` or `None` 
+            to trigger the interactive menu.
+
+    Returns:
+        SearchType or None: The selected search scope as a `SearchType` Enum. 
+            Returns `None` if the user cancels the interactive prompt.
+    """
     if download_type:
         return SearchType(f"{download_type}s")
 
@@ -112,7 +164,28 @@ def ask_search_type(console, download_type):
 
     return search_type
 
-def ask_search_information(search_type, args):
+def ask_search_information(search_type: SearchType, args: argparse.Namespace) -> tuple:
+    """
+    Collects and sanitizes the required search parameters for a given download type.
+
+    This function attempts to use pre-defined arguments provided via the command line. 
+    If the script is running in interactive mode (i.e., `--non_interactive` is False) 
+    and required fields are missing, it uses `rich.prompt.Prompt` to ask the user 
+    for the necessary information based on the chosen `search_type`. All returned 
+    strings are stripped of leading and trailing whitespace.
+
+    Args:
+        search_type (SearchType): The scope of the download (ARTIST, ALBUM, or SONG). 
+            This dictates which prompts are shown to the user.
+        args (argparse.Namespace): The parsed command-line arguments. Expected to 
+            contain `artist`, `album`, `song` (all strings), and `non_interactive` (bool).
+
+    Returns:
+        tuple: A tuple containing three strings in the following order:
+            - artist_name (str): The cleaned artist name.
+            - album_name (str): The cleaned album name (empty if not applicable).
+            - song_name (str): The cleaned track name (empty if not applicable).
+    """
     artist_name, album_name, song_name = args.artist, args.album, args.song
 
     if not args.non_interactive:
@@ -124,14 +197,33 @@ def ask_search_information(search_type, args):
         if search_type == SearchType.SONG and not song_name:
             song_name = Prompt.ask("[green]Track name[/green]")
 
-    artist_name = artist_name.strip()
-    album_name = album_name.strip()
-    song_name = song_name.strip()
-
-    return artist_name, album_name, song_name
+    return artist_name.strip(), album_name.strip(), song_name.strip()
 
 
-def select_from_search_results(ml, search_results, search_type, is_non_interactive):
+def select_from_search_results(ml: Muzlib, search_results: list, search_type: SearchType, is_non_interactive: bool) -> dict:
+    """
+    Iterates through formatted search results and selects one for downloading.
+
+    If `is_non_interactive` is True, this function automatically selects and 
+    returns the very first result from the list. Otherwise, it uses the 
+    `questionary` library to interactively prompt the user to confirm each 
+    result one by one until a positive confirmation is received.
+
+    Args:
+        ml (Muzlib): The initialized Muzlib instance, used here to call the 
+            `go_though_search_results` formatting method.
+        search_results (list): An iterable of raw search result dictionaries 
+            returned by the YouTube Music API.
+        search_type (SearchType): The enum representing the scope of the search 
+            (e.g., ARTIST, ALBUM, SONG), used to format the interactive prompt.
+        is_non_interactive (bool): If True, bypasses user prompts and auto-selects 
+            the top result.
+
+    Returns:
+        dict or None: The dictionary representing the user-confirmed or 
+            auto-selected search result. Returns `None` if the search results 
+            are empty or if the user declines all available options.
+    """
     selected_result = None
     for selected_result in ml.go_though_search_results(search_results, search_type):
         if is_non_interactive:
@@ -141,7 +233,29 @@ def select_from_search_results(ml, search_results, search_type, is_non_interacti
 
     return selected_result
 
-def execute_download_loop(ml, selected_result, search_type, console):
+def execute_download_loop(ml: Muzlib, selected_result: dict, search_type: SearchType, console: Console):
+    """
+    Executes the main download process while displaying a rich progress bar.
+
+    This function orchestrates the actual downloading of tracks based on the 
+    user's selection. It first calculates the total number of tracks to download 
+    to initialize the progress bar. As it iterates through and downloads each 
+    track, it updates the UI in real-time with the current track's name and prints 
+    clickable local file URIs to the terminal. Finally, it calculates and returns 
+    the lowest common directory path where all downloaded files were saved.
+
+    Args:
+        ml (Muzlib): The initialized Muzlib instance handling the core download 
+            and metadata extraction logic.
+        selected_result (dict): The specific search result dictionary chosen for download.
+        search_type (SearchType): The scope of the download (e.g., ARTIST, ALBUM, SONG).
+        console (rich.console.Console): The initialized Rich Console object used 
+            to render the status spinner and progress bars.
+
+    Returns:
+        str or None: The absolute path to the common parent directory containing 
+            all downloaded files. Returns `None` if no files were downloaded.
+    """
     with console.status("[cyan]Retrieving information…[/cyan]"):
         download_summary = ml.get_download_summary(selected_result, search_type)
 
