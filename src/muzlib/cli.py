@@ -2,25 +2,43 @@ import os
 import sys
 import argparse
 import pathlib
+import questionary
+from rich.console import Console
+from rich.panel import Panel
+from rich.prompt import Prompt
+from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, ProgressColumn
+from rich.text import Text
 
 from . import files_utils
 from .muzlib import Muzlib, SearchType
 
-def main():
-    """
-    Main CLI entry point for the Muzlib Downloader application.
 
-    This function parses command-line arguments using `argparse`, sets up a rich 
-    terminal UI, prompts the user for interactive selections (unless non-interactive 
-    mode is triggered), and orchestrates the search and download progress loops.
+class TimeColumn(ProgressColumn):
     """
-    from rich.console import Console
-    from rich.panel import Panel
-    from rich.prompt import Prompt
-    from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn, ProgressColumn
-    from rich.text import Text
-    import questionary
+    A custom Rich progress column that displays elapsed and remaining time.
 
+    This column formats the task's time metrics into a single string showing 
+    both the elapsed time and the estimated time remaining in an "H:MM:SS" format. 
+    The output is rendered as colored text.
+
+    Format:
+        [Elapsed Time < Remaining Time]
+        Example: [0:01:45<0:00:15]
+
+    Methods:
+        render(task): Extracts and formats the time metrics from a Rich Task object.
+    """
+    def render(self, task):
+        elapsed = task.finished_time if task.finished else task.elapsed
+        remaining = task.time_remaining
+
+        elapsed_str = f"{int(elapsed // 3600):01}:{int((elapsed % 3600) // 60):02}:{int(elapsed % 60):02}" if elapsed else "0:00:00"
+        remaining_str = f"{int(remaining // 3600):01}:{int((remaining % 3600) // 60):02}:{int(remaining % 60):02}" if remaining else "?"
+
+        return Text(f"[{elapsed_str}<{remaining_str}]", style="green")
+
+
+def process_arguments():
     parser = argparse.ArgumentParser(description="Muzlib Downloader")
     parser.add_argument("-l", "--library_path", type=str, default="",
         help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
@@ -40,19 +58,58 @@ def main():
         print("Error: --non_interactive flag requires at least --download_type to be specified.")
         sys.exit(1)
 
+    return args
 
-    console = Console()
-
+def print_welcome_message(console):
     console.print(Panel.fit("[bold cyan]🎵 Muzlib Downloader[/bold cyan]", border_style="cyan"))
+
+def ask_library_path(console, default_music_dir):
+    while True:
+        library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
+        if library_path.strip():
+            break
+        console.print("[red]Path cannot be empty.[/red]")
+
+    return library_path.strip()
+
+def ask_search_type(console):
+    search_type = questionary.select(
+        "What do you want to download?",
+        choices=[
+            questionary.Choice("Complete discography", value=SearchType.ARTIST),
+            questionary.Choice("Specific album",       value=SearchType.ALBUM),
+            questionary.Choice("Specific song",       value=SearchType.SONG),
+        ]
+    ).ask()
+
+    # If user pressed Ctrl+C
+    if search_type is None:
+        console.print("[yellow]Cancelled.[/yellow]")
+        return
+
+    return search_type
+
+
+def main():
+    """
+    Main CLI entry point for the Muzlib Downloader application.
+
+    This function parses command-line arguments using `argparse`, sets up a rich 
+    terminal UI, prompts the user for interactive selections (unless non-interactive 
+    mode is triggered), and orchestrates the search and download progress loops.
+    """
+
+    # Parse arguments
+    args = process_arguments()
+
+    # Start console
+    console = Console()
+    print_welcome_message(console)
 
     # Path input with validation
     default_music_dir = str(files_utils.get_default_music_directory())
     if not args.library_path and not args.non_interactive:
-        while True:
-            library_path = Prompt.ask("[green]Music library path[/green]", default=default_music_dir)
-            if library_path.strip():
-                break
-            console.print("[red]Path cannot be empty.[/red]")
+        library_path = ask_library_path(console, default_music_dir)
     else:
         library_path = args.library_path if args.library_path else default_music_dir
 
@@ -63,23 +120,15 @@ def main():
         console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
         return
 
-    # Interactive menu instead of free-text input
+    # Interactive menu for search type
     if not args.download_type:
-        search_type = questionary.select(
-            "What do you want to download?",
-            choices=[
-                questionary.Choice("Complete discography", value=SearchType.ARTIST),
-                questionary.Choice("Specific album",       value=SearchType.ALBUM),
-                questionary.Choice("Specific song",       value=SearchType.SONG),
-            ]
-        ).ask()
-
-        # If user pressed Ctrl+C
-        if search_type is None:
-            console.print("[yellow]Cancelled.[/yellow]")
-            return
+        search_type = ask_search_type(console)
     else:
         search_type = SearchType(f"{args.download_type}s")
+
+    if search_type is None:
+        return
+
 
     artist_name, album_name, song_name = args.artist, args.album, args.song
 
