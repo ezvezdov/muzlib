@@ -340,14 +340,14 @@ class Muzlib():
         
         artist_details = self.ytmusic.get_artist(artist_id)
 
-        for type in ["albums", "singles"]:
-            if not type in artist_details: continue
+        for audio_type in ["albums", "singles"]:
+            if not audio_type in artist_details: continue
 
-            albums = artist_details[type]['results']
+            albums = artist_details[audio_type]['results']
 
-            if artist_details[type]['browseId']:
-                albums = self.ytmusic.get_artist_albums(artist_details[type]['browseId'], params=None, limit=None)
-            
+            if artist_details[audio_type]['browseId']:
+                albums = self.ytmusic.get_artist_albums(artist_details[audio_type]['browseId'], params=None, limit=None)
+
             for album in albums:
                 yield from self._get_album_metadata(album['browseId'])
 
