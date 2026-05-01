@@ -159,30 +159,6 @@ def main():
     with console.status("[cyan]Retrieving information…[/cyan]"):
         download_summary = ml.get_download_summary(selected_result, search_type)
 
-    class TimeColumn(ProgressColumn):
-        """
-        A custom Rich progress column that displays elapsed and remaining time.
-
-        This column formats the task's time metrics into a single string showing 
-        both the elapsed time and the estimated time remaining in an "H:MM:SS" format. 
-        The output is rendered as colored text.
-
-        Format:
-            [Elapsed Time < Remaining Time]
-            Example: [0:01:45<0:00:15]
-
-        Methods:
-            render(task): Extracts and formats the time metrics from a Rich Task object.
-        """
-        def render(self, task):
-            elapsed = task.finished_time if task.finished else task.elapsed
-            remaining = task.time_remaining
-
-            elapsed_str = f"{int(elapsed // 3600):01}:{int((elapsed % 3600) // 60):02}:{int(elapsed % 60):02}" if elapsed else "0:00:00"
-            remaining_str = f"{int(remaining // 3600):01}:{int((remaining % 3600) // 60):02}:{int(remaining % 60):02}" if remaining else "?"
-
-            return Text(f"[{elapsed_str}<{remaining_str}]", style="green")
-
     with Progress(
         SpinnerColumn(),
         TextColumn("[bold cyan]{task.description}"),
