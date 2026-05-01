@@ -250,7 +250,8 @@ class Muzlib():
                 # if track['title'] != single_name and track_info['ytm_id'] != single_id:
                 #     continue
 
-            track_info['track_artists'] = [self._artist_rename(artist['name']) for artist in track['artists']] + _get_feat_artists(track['title'])
+            song_artists = [artist['name'] for artist in track['artists']] + _get_feat_artists(track['title'])
+            track_info['track_artists'] = [self._artist_rename(artist) for artist in song_artists]
             track_info['track_artists_str'] = ", ".join(track_info['track_artists'])
             track_info['release_date'] = album_details['year'] if 'year' in album_details else ''
 
@@ -260,6 +261,8 @@ class Muzlib():
                 track_info['track_number'] = track['trackNumber']
                 track_info['total_tracks'] = album_details['trackCount']
 
+            album_artists = [artist['name'] for artist in album_details['artists']] + _get_feat_artists(track_info['album_name'])
+            track_info['album_artists'] = [self._artist_rename(artist) for artist in album_artists]
             track_info['lyrics'] = lyrics_utils.get_lyrics(track_info['track_name'], track_info['track_artists_str'], ytmusic=self.ytmusic, video_id=track_info['ytm_id'])
             track_info['cover'] = _get_image(album_details['thumbnails'][-1]['url'])
             track_info['ytm_title'] = f"{track_info['track_artists_str']} - {track['title']}"
