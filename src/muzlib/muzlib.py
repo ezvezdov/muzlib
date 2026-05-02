@@ -198,7 +198,7 @@ class Muzlib():
         try:
             os.makedirs(self.library_path, exist_ok=True)
             logging_utils.logging.debug(f"Folders created successfully at: {self.library_path}")
-        except Exception as e:
+        except OSError as e:
             logging_utils.logging.error(f"Error creating folders: {e}")
 
         self.ydl_opts['outtmpl'] = os.path.join(self.tmp_path, self.ydl_opts['outtmpl'])
@@ -328,7 +328,7 @@ class Muzlib():
             else:
                 logging_utils.logging.error(f"Invalid search type: {search_type}")
                 print(f"Invalid search type: {search_type}")
-                return None
+                yield None
 
             yield result
 
@@ -434,7 +434,7 @@ class Muzlib():
             track_info = tag_utils.get_tag(str(audio_path))
 
             audio_rpath = os.path.relpath(str(audio_path), start=self.library_path)
-            name, ext = os.path.splitext(audio_rpath)
+            name = os.path.splitext(audio_rpath)[0]
             track_info['path'] = name
 
             track_metadata.append(track_info)
@@ -522,6 +522,8 @@ class Muzlib():
             logging_utils.logging.error(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")
             print(f"Error downloading track {track_info.get('track_name','Unknown')} with id {track_info.get('ytm_id','Unknown')}: {e}")
 
+            return None
+
     def __move_downloaded_track(self, track_id: str, track_info: dict) -> str:
         """
         Moves and renames a downloaded track from the temp folder to its final location.
@@ -600,4 +602,3 @@ class Muzlib():
 
         with open(self.db_path, "r", encoding="utf-8") as file:
             self.db = json.load(file)
-            
