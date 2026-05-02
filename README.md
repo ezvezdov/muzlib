@@ -3,6 +3,8 @@
 Muzlib is a Python script that allows you to create your own music library.
 Music is downloaded from YouTube, and music tags are constructed using data from YouTube, Lrclib, NetEase.
 
+🖥️🖱️ For GUI install [muzlib-desktop](https://github.com/ezvezdov/muzlib-desktop)
+
 # Instalation
 
 ## Arch Linux \[AUR\]
