@@ -15,7 +15,6 @@ Key Features:
 """
 
 import os
-import re
 import json
 import time
 import shutil
@@ -30,103 +29,7 @@ from . import lyrics_utils
 from .tag_utils import tag_utils
 from . import logging_utils
 from . import files_utils
-
-
-
-def _trackname_remove_unnecessary(track_name:str) -> str:
-    """
-    Cleans a track name by removing common feature and producer text patterns.
-
-    This function strips out variations of "(feat. ...)", "ft.", "(prod. ...)", 
-    and similar metadata often appended to song titles. It also removes any 
-    resulting trailing whitespace.
-
-    Args:
-        track_name (str): The original track name containing potential 
-            unnecessary feature or producer tags.
-
-    Returns:
-        str: The cleaned track name.
-        
-    Examples:
-        >>> _trackname_remove_unnecessary("Song Title (feat. Artist B)")
-        'Song Title'
-        >>> _trackname_remove_unnecessary("Another Track [prod. by DJ C]")
-        'Another Track'
-    """
-    name = re.sub(r'\(feat.*?\)|\(ft.*?\)|feat.*|ft.*|\(Feat.*?\)|\(Ft.*?\)|\(prod.*?\)|\[prod.*?\]|\(Prod.*?\)', '', track_name)
-    return name.rstrip()
-
-
-def _get_feat_artists(track_name:str) -> list[str]:
-    """
-    Extracts a list of featured artists from a given track name.
-
-    This function searches the track name for common "featuring" indicators 
-    (such as "feat.", "ft.", "(feat ...)", etc., ignoring case) and parses out 
-    the individual artist names. It splits multiple artists separated by 
-    commas or ampersands ("&").
-
-    Args:
-        track_name (str): The full title of the music track.
-
-    Returns:
-        list of str: A list containing the names of the featured artists. 
-            Returns an empty list if no featured artists are found.
-
-    Examples:
-        >>> _get_feat_artists("Cool Song (feat. Artist A & Artist B)")
-        ['Artist A', 'Artist B']
-        >>> _get_feat_artists("Another Track ft. Singer, Rapper")
-        ['Singer', 'Rapper']
-        >>> _get_feat_artists("Solo Track")
-        []
-    """
-    match = re.search(r'\((?:feat|ft)\.*.*?\)|(?:feat|ft)\.*.*', track_name, re.IGNORECASE)
-
-    if match:
-        result = re.sub(r'.*?(feat|ft)\.*', '', match.group(0), flags=re.IGNORECASE).strip("() ")
-
-        artists = re.split(r',|\s&\s', result)
-
-        # Clean up whitespace
-        artists = [artist.strip() for artist in artists]
-
-        return artists
-
-    return []
-
-def _sanitize_filename(filename:str) -> str:
-    """
-    Sanitizes a string for use as a safe file or directory name.
-
-    This function replaces characters that are forbidden in most file systems 
-    (Linux, Windows, MacOS, Android) with visually similar full-width Unicode equivalents 
-    or safe alternatives.
-
-    Args:
-        filename (str): The original, unsanitized filename string.
-
-    Returns:
-        str: The sanitized filename safe for writing to disk.
-
-    Examples:
-        >>> _sanitize_filename('My "Awesome" Track: Part 1/2?')
-        "My ''Awesome'' Track： Part 1／2？"
-        >>> _sanitize_filename("Title<With>Illegal*Chars|")
-        'Title＜With＞Illegal＊Chars∣'
-    """
-    filename = re.sub(r'[:]', "：", filename)
-    filename = re.sub(r'[?]', "？", filename)
-    filename = re.sub(r'[*]', "＊", filename)
-    filename = re.sub(r'[<]', "＜", filename)
-    filename = re.sub(r'[>]', "＞", filename)
-    filename = re.sub(r'[/]', "／", filename)
-    filename = re.sub(r'["]', "\'\'", filename)
-    filename = re.sub(r'[|]', "∣", filename)
-    filename = re.sub(r'[\0]', "", filename)
-
-    return filename
+from . import text_utils
 
 
 def _get_image(url:str, retries=3, delay=1) -> str:
@@ -345,7 +248,7 @@ class Muzlib():
         for track in album_details['tracks']:
             track_info = _init_track_info()
             track_info['ytm_id'] = track['videoId']
-            track_info['track_name'] = _trackname_remove_unnecessary(track['title'])
+            track_info['track_name'] = text_utils.trackname_remove_unnecessary(track['title'])
 
             # Single downloading
             if not single_name is None and not single_id is None and len(album_details['tracks']) > 1:
@@ -355,18 +258,18 @@ class Muzlib():
                 # if track['title'] != single_name and track_info['ytm_id'] != single_id:
                 #     continue
 
-            song_artists = [artist['name'].strip() for artist in track['artists']] + _get_feat_artists(track['title'])
+            song_artists = [artist['name'].strip() for artist in track['artists']] + text_utils.get_feat_artists(track['title'])
             track_info['track_artists'] = [self._artist_rename(artist) for artist in song_artists]
             track_info['track_artists_str'] = ", ".join(track_info['track_artists'])
             track_info['release_date'] = album_details['year'] if 'year' in album_details else ''
 
             # TODO: Set album and track number in singles too
             if album_details['trackCount'] > 1:
-                track_info['album_name'] = _trackname_remove_unnecessary(album_details['title'])
+                track_info['album_name'] = text_utils.trackname_remove_unnecessary(album_details['title'])
                 track_info['track_number'] = track['trackNumber']
                 track_info['total_tracks'] = album_details['trackCount']
 
-            album_artists = [artist['name'].strip() for artist in album_details['artists']] + _get_feat_artists(track_info['album_name'])
+            album_artists = [artist['name'].strip() for artist in album_details['artists']] + text_utils.get_feat_artists(track_info['album_name'])
             track_info['album_artists'] = [self._artist_rename(artist) for artist in album_artists]
             track_info['lyrics'] = lyrics_utils.get_lyrics(track_info['track_name'], track_info['track_artists_str'], ytmusic=self.ytmusic, video_id=track_info['ytm_id'])
             track_info['cover'] = _get_image(album_details['thumbnails'][-1]['url'])
