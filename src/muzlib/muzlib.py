@@ -539,15 +539,15 @@ class Muzlib():
         file_path = os.path.join(self.tmp_path, f"{track_id}{self.extension}")
 
         # Specify filename
-        new_filename = _sanitize_filename(track_info['track_artists_str'] + " - " + track_info['track_name'])
+        new_filename = text_utils.sanitize_filename(track_info['track_artists_str'] + " - " + track_info['track_name'])
         if track_info['track_number']:
             new_filename = f"{track_info['track_number']}. {new_filename}"
 
-        artist_dir = _sanitize_filename(track_info['track_artists'][0])
+        artist_dir = text_utils.sanitize_filename(track_info['track_artists'][0])
 
         album_dir = ''
         if track_info['total_tracks']:
-            album_dir = _sanitize_filename(f"[{track_info['release_date']}] {track_info['album_name']}")
+            album_dir = text_utils.sanitize_filename(f"[{track_info['release_date']}] {track_info['album_name']}")
 
         # Join path components
         new_path = os.path.join(artist_dir, album_dir, new_filename)
