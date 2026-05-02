@@ -14,6 +14,17 @@ yay -S python-muzlib
 ## From PyPI
 Ensure that you have installed [FFmpeg](https://ffmpeg.org/download.html).
 
+### Using [uv](https://github.com/astral-sh/uv)
+
+You can run muzlib without installation directly from the command line using `uvx`, which will handle dependencies and virtual environments for you:
+```bash
+uvx --from muzlib muzlib-cli
+```
+
+### Using pip
+
+You can install muzlib using pip in a virtual environment:
+
 ```bash
 python -m venv .venv
 source .venv/bin/activate
