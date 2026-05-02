@@ -1,3 +1,5 @@
+"""Text processing and sanitization utilities for Muzlib."""
+
 import re
 
 def trackname_remove_unnecessary(track_name:str) -> str:
