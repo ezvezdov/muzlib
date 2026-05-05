@@ -1,4 +1,5 @@
-# src/muzlib/__main__.py
+"""Main entry point for the muzlib package."""
+
 from .cli import main
 
 if __name__ == "__main__":
