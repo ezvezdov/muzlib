@@ -40,7 +40,7 @@ Muzlib can be run directly from the command line. When launched without argument
 ```
 muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
         [--artist ARTIST] [--album ALBUM] [--song SONG]
-        [--non_interactive]
+        [--format FORMAT] [--non_interactive]
 ```
  
 ## Arguments
