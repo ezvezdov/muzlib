@@ -99,7 +99,7 @@ def find_audio_files(directory: str) -> list[Path]:
     Recursively searches a directory and its subdirectories for audio files.
 
     This function scans the specified directory tree and returns a list of 
-    all files matching the supported audio extensions. 
+    all files matching the supported audio formats. 
 
     Args:
         directory (str): The root directory path to begin the search.
@@ -114,9 +114,9 @@ def find_audio_files(directory: str) -> list[Path]:
         [PosixPath('my_music/song1.mp3'), PosixPath('my_music/albums/song2.opus')]
     """
 
-    extensions = {'.mp3', '.opus'}
+    formats = {'.opus', '.mp3'}
 
     return [
         p for p in Path(directory).rglob("*")
-        if p.suffix.lower() in extensions
+        if p.suffix.lower() in formats
     ]

@@ -53,6 +53,7 @@ muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
 | `--artist ARTIST` | | Target artist's name. Highly recommended for all download types to ensure accurate search results. |
 | `--album ALBUM` | | Target album's title. Use alongside `--artist` when `--download_type` is `album`. |
 | `--song SONG` | | Target song's title. Use alongside `--artist` when `--download_type` is `song`. |
+| `--format FORMAT` | | Target audio format (e.g., `mp3`, `opus`). Defaults to `opus`. |
 | `--non_interactive` | | Bypass all user prompts and automatically download the top search result. Requires `--download_type` to be set. |
  
 ## Examples
@@ -76,7 +77,7 @@ muzlib-cli -d album --artist "Ludwig Göransson" --album "Oppenheimer" --non_int
  
 ### Download a single song into a custom library folder
 ```bash
-muzlib-cli -l ~/Music -d song --artist "Ludwig Göransson" --song "Can You Hear The Music" --non_interactive
+muzlib-cli -l ~/Music -d song --artist "Ludwig Göransson" --song "Can You Hear The Music" --format "opus" --non_interactive
 ```
  
 > [!NOTE]
@@ -85,7 +86,7 @@ muzlib-cli -l ~/Music -d song --artist "Ludwig Göransson" --song "Can You Hear 
 ## Available classes
  
 There is only one (for now) class that can be used:
-1. `Muzlib(library_path: str, skip_downloaded=False)`: library class that uses YouTube Music metadata
+1. `Muzlib(library_path: str, format="opus", skip_downloaded=False)`: library class that uses YouTube Music metadata
 
 ## Available methods
 ### Backup library

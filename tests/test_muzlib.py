@@ -64,7 +64,7 @@ class TestMuzlibClass:
     def muzlib_instance(self, *mocks):
         """Fixture to provide a mocked Muzlib instance for testing."""
         # Instantiate without touching the real disk or network
-        return Muzlib(library_path="/fake/library", codec="mp3")
+        return Muzlib(library_path="/fake/library", format="mp3")
 
     def test_artist_rename(self, muzlib_instance):
         """Test the custom artist renaming logic[cite: 1]."""

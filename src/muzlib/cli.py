@@ -69,6 +69,8 @@ def process_arguments():
         help="Target album's title. Use alongside --artist when --download_type is 'album'.")
     parser.add_argument("--song", type=str, default="",
         help="Target song's title. Use alongside --artist when --download_type is 'song'.")
+    parser.add_argument("--format", type=str, default="opus", choices=['opus', 'mp3'],
+        help="Target audio format (e.g., 'opus', 'mp3').")
     parser.add_argument("--non_interactive", action="store_true",
         help="Bypass all user prompts and automatically download the top search result. Requires --download_type to be set.")
     args = parser.parse_args()
@@ -317,7 +319,7 @@ def main():
 
     # Try to init Muzlib
     try:
-        ml = Muzlib(library_path.strip())
+        ml = Muzlib(library_path.strip(), format=args.format)
     except Exception as e:
         console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
         return
