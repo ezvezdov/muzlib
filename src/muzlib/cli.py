@@ -40,6 +40,15 @@ class TimeColumn(ProgressColumn):
         return Text(f"[{elapsed_str}<{remaining_str}]", style="green")
 
 
+def clear_previous_lines(n):
+    """Moves the cursor up 'n' lines and clears them."""
+
+    for _ in range(n):
+        sys.stdout.write('\033[1A')  # Move cursor up 1 line
+        sys.stdout.write('\033[2K')  # Clear the entire line
+    sys.stdout.flush()               # Ensure the terminal updates immediately
+
+
 def process_arguments():
     """
     Parses command-line arguments for the Muzlib Downloader CLI.
