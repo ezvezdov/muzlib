@@ -135,13 +135,13 @@ class Muzlib():
 
     Args:
         library_path (str): The root directory where downloaded music will be stored.
-        format (str, optional): The preferred audio format (e.g., "opus", "mp3"). Defaults to "opus".
+        audio_format (str, optional): The preferred audio format (e.g., "opus", "mp3"). Defaults to "opus".
         skip_downloaded (bool, optional): If True, skips downloading tracks already present in the local database. Defaults to False.
     """
-    def __init__(self, library_path: str, format="opus", skip_downloaded=False):
+    def __init__(self, library_path: str, audio_format="opus", skip_downloaded=False):
 
 
-        self.extension = "." + format.lower()
+        self.extension = "." + audio_format.lower()
 
 
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -152,7 +152,7 @@ class Muzlib():
             'retries': 5,  # Retry 5 times for errors
             'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
-                    'preferredcodec': format,
+                    'preferredcodec': audio_format,
                     'preferredquality': '0', # Best quality
             }],
             'noprogress': True,

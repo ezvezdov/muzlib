@@ -86,7 +86,7 @@ muzlib-cli -l ~/Music -d song --artist "Ludwig Göransson" --song "Can You Hear 
 ## Available classes
  
 There is only one (for now) class that can be used:
-1. `Muzlib(library_path: str, format="opus", skip_downloaded=False)`: library class that uses YouTube Music metadata
+1. `Muzlib(library_path: str, audio_format="opus", skip_downloaded=False)`: library class that uses YouTube Music metadata
 
 ## Available methods
 ### Backup library

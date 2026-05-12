@@ -344,7 +344,7 @@ def main():
 
     # Try to init Muzlib
     try:
-        ml = Muzlib(library_path.strip(), format=args.format)
+        ml = Muzlib(library_path.strip(), audio_format=args.format)
     except Exception as e:
         console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
         return
