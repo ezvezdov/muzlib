@@ -347,6 +347,9 @@ def main():
 
     # Select from search results
     selected_result = select_from_search_results(ml, search_results, search_type, args.non_interactive)
+    if selected_result is None:
+        console.print("[yellow]No selection made. Exiting.[/yellow]")
+        return
 
     # Execute download loop
     common_path = execute_download_loop(ml, selected_result, search_type, console)
