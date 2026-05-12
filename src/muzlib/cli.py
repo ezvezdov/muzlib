@@ -236,11 +236,27 @@ def select_from_search_results(ml: Muzlib, search_results: list, search_type: Se
             are empty or if the user declines all available options.
     """
     selected_result = None
-    for selected_result in ml.go_though_search_results(search_results, search_type):
+    print(f"Is this the {search_type.name.lower()} you searched for? [Exit by]")
+    
+    for result in ml.go_though_search_results(search_results, search_type):
         if is_non_interactive:
+            selected_result = result
             break
-        if questionary.confirm(f"Is this the {search_type.name.lower()} you searched for?\n  {selected_result['title']}").ask():
+        
+        answer = questionary.confirm(f"  {result['title']}").ask()
+
+        if answer:
+            # User said "Yes"
+            selected_result = result
             break
+        elif answer is None:
+            # User pressed Ctrl+C
+            clear_previous_lines(1)
+            break
+        else:
+            # User said "No"
+            clear_previous_lines(1)
+        
 
     return selected_result
 
