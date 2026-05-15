@@ -38,10 +38,21 @@ class TestAddTag:
 
         # Verify opus.add_tag was called once with the correct arguments
         mock_opus_add.assert_called_once_with(path, sample_info)
+    
+    @patch("muzlib.tag_utils.m4a.add_tag")
+    def test_dispatch_to_m4a(self, mock_m4a_add, sample_info):
+        """Test that .m4a files are routed to the m4a submodule."""
+        path = "music/audio.m4a"
+
+        add_tag(path, sample_info)
+
+        # Verify m4a.add_tag was called once with the correct arguments
+        mock_m4a_add.assert_called_once_with(path, sample_info)
 
     @patch("muzlib.tag_utils.mp3.add_tag")
     @patch("muzlib.tag_utils.opus.add_tag")
-    def test_unsupported_format_ignored(self, mock_opus_add, mock_mp3_add, sample_info):
+    @patch("muzlib.tag_utils.m4a.add_tag")
+    def test_unsupported_format_ignored(self, mock_m4a_add, mock_opus_add, mock_mp3_add, sample_info):
         """Test that unsupported extensions do nothing and don't crash."""
         path = "music/report.pdf"
 
@@ -50,6 +61,7 @@ class TestAddTag:
         # Neither handler should be called
         mock_mp3_add.assert_not_called()
         mock_opus_add.assert_not_called()
+        mock_m4a_add.assert_not_called()
 
     @patch("muzlib.tag_utils.mp3.add_tag")
     def test_case_sensitivity(self, mock_mp3_add, sample_info):
@@ -82,6 +94,21 @@ class TestGetTag:
         mock_mp3_get.assert_called_once_with(path)
         assert result == expected_result
 
+    @patch("muzlib.tag_utils.m4a.get_tag")
+    def test_get_tag_dispatch_to_m4a(self, mock_m4a_get):
+        """Test that .m4a files are routed to the m4a submodule and return its result."""
+        # Arrange
+        path = "music/audio.m4a"
+        expected_result = {'track_name': 'Test M4A Song', 'ytm_id': '789'}
+        mock_m4a_get.return_value = expected_result
+
+        # Act
+        result = get_tag(path)
+
+        # Assert
+        mock_m4a_get.assert_called_once_with(path)
+        assert result == expected_result
+
     @patch("muzlib.tag_utils.opus.get_tag")
     def test_get_tag_dispatch_to_opus(self, mock_opus_get):
         """Test that .opus files are routed to the opus submodule and return its result."""
@@ -99,7 +126,8 @@ class TestGetTag:
 
     @patch("muzlib.tag_utils.mp3.get_tag")
     @patch("muzlib.tag_utils.opus.get_tag")
-    def test_get_tag_unsupported_format(self, mock_opus_get, mock_mp3_get):
+    @patch("muzlib.tag_utils.m4a.get_tag")
+    def test_get_tag_unsupported_format(self, mock_m4a_get, mock_opus_get, mock_mp3_get):
         """Test that unsupported extensions return an empty dictionary."""
         # Arrange
         path = "music/document.pdf"
@@ -111,6 +139,7 @@ class TestGetTag:
         assert not result
         mock_mp3_get.assert_not_called()
         mock_opus_get.assert_not_called()
+        mock_m4a_get.assert_not_called()
 
     @patch("muzlib.tag_utils.mp3.get_tag")
     def test_get_tag_case_sensitivity(self, mock_mp3_get):
