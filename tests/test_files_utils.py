@@ -160,7 +160,7 @@ class TestFindAudioFiles:
     """Test suite for the find_audio_files function."""
 
     def test_find_audio_files_with_matches(self, tmp_path):
-        """Test that it correctly finds .mp3 and .opus files."""
+        """Test that it correctly finds .mp3, .opus, .m4a files."""
 
         # Set up a temporary directory with various files
         (tmp_path / "song1.mp3").touch()
@@ -173,15 +173,17 @@ class TestFindAudioFiles:
         (sub_dir / "song3.mp3").touch()
         (sub_dir / "cover.jpg").touch()       # Should be ignored
         (sub_dir / "song4.OPUS").touch()      # Should handle uppercase extension
+        (sub_dir / "song5.m4a").touch()
 
         # Run the function on the temporary directory
         result = find_audio_files(str(tmp_path))
 
-        assert len(result) == 4
+        assert len(result) == 5
         assert tmp_path/"song1.mp3" in result
         assert tmp_path/"song2.opus" in result
         assert sub_dir/"song3.mp3" in result
         assert sub_dir/"song4.OPUS" in result
+        assert sub_dir/"song5.m4a" in result
 
     def test_find_audio_files_empty_directory(self, tmp_path):
         """Test behavior when the directory has no matching files."""

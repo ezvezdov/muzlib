@@ -114,7 +114,7 @@ def find_audio_files(directory: str) -> list[Path]:
         [PosixPath('my_music/song1.mp3'), PosixPath('my_music/albums/song2.opus')]
     """
 
-    formats = {'.opus', '.mp3'}
+    formats = {'.opus', '.mp3', '.m4a'}
 
     return [
         p for p in Path(directory).rglob("*")
