@@ -9,6 +9,7 @@ providing a single interface for all tag manipulation in the application.
 
 from muzlib.tag_utils import mp3
 from muzlib.tag_utils import opus
+from muzlib.tag_utils import m4a
 
 def add_tag(audio_path:str, track_info:dict) -> None:
     """
@@ -16,15 +17,15 @@ def add_tag(audio_path:str, track_info:dict) -> None:
 
     This function acts as a dispatcher. It checks the file extension of the 
     provided `audio_path` and delegates the actual tagging logic to either 
-    the `mp3` or `opus` submodules. If the file format is unsupported 
-    (neither .mp3 nor .opus), the function exits silently without making changes.
+    the `mp3`, `opus`, or `m4a` submodules. If the file format is unsupported,
+    the function exits silently without making changes.
 
     Args:
         audio_path (str): The file path to the target audio file. Must end 
-            in either '.mp3' or '.opus' to be processed.
+            in either '.mp3', '.opus' or '.m4a' to be processed.
         track_info (dict): A standardized dictionary containing track metadata. 
             It is used consistently across both extraction (get_tag) and embedding 
-            (add_tag) functions for both MP3 and Opus files.
+            (add_tag) functions for both mp3, m4a, and opus files.
 
             Expected Keys:
                 - 'ytm_id' (str): The unique YouTube Music video/track ID.
@@ -53,6 +54,8 @@ def add_tag(audio_path:str, track_info:dict) -> None:
         mp3.add_tag(audio_path, track_info)
     elif audio_path.endswith('.opus'):
         opus.add_tag(audio_path, track_info)
+    elif audio_path.endswith('.m4a'):
+        m4a.add_tag(audio_path, track_info)
 
 def get_tag(audio_path:str) -> dict:
     """
@@ -60,13 +63,13 @@ def get_tag(audio_path:str) -> dict:
 
     This function acts as a dispatcher. It checks the file extension of the 
     provided `audio_path` and dynamically delegates the metadata extraction 
-    to either the `mp3` or `opus` submodules. This lazy-loading approach 
+    to either the `mp3`, `opus`, or `m4a` submodules. This lazy-loading approach 
     prevents unnecessary imports. If the file format is unsupported (neither 
-    .mp3 nor .opus), the function implicitly returns `None`.
+    .mp3 nor .opus nor .m4a), the function implicitly returns `None`.
 
     Args:
         audio_path (str): The file path to the target audio file. Expected 
-            to end in either '.mp3' or '.opus'.
+            to end in either '.mp3', '.opus' or '.m4a'.
 
     Returns:
         dict: A dictionary containing the extracted track information. Returns an 
@@ -95,5 +98,8 @@ def get_tag(audio_path:str) -> dict:
         return mp3.get_tag(audio_path)
     if audio_path.endswith('.opus'):
         return opus.get_tag(audio_path)
+    if audio_path.endswith('.m4a'):
+        return m4a.get_tag(audio_path)
+        
 
     return {}
