@@ -321,6 +321,10 @@ def execute_download_loop(ml: Muzlib, selected_result: dict, search_type: Search
             progress.update(task, track_name=song_name)
 
             song_path_str = ml.download_by_track_info(track_info)
+            if song_path_str is None:
+                progress.print(f"[yellow]Skipped:[/yellow] {song_name}")
+                progress.update(task, advance=1, track_name="")
+                continue
 
             song_path = pathlib.Path(song_path_str)
             song_uri = pathlib.Path(song_path).as_uri()
