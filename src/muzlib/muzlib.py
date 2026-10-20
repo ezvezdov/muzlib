@@ -150,16 +150,35 @@ class Muzlib():
             'format': 'bestaudio',
             'outtmpl': '%(id)s.%(ext)s',
             'retries': 5,  # Retry 5 times for errors
-            'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': audio_format,
-                    'preferredquality': '0', # Best quality
-            }],
             'noprogress': True,
             'quiet': True,
             'no_warnings': True,
             'cookiefile': os.path.join(current_dir, 'assets','cookies.txt')
         }
+
+        if audio_format == 'opus':
+            # Prefer native opus
+            self.ydl_opts['format'] = 'bestaudio[acodec=opus]/bestaudio'
+            self.ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'opus',   # stream copy if already opus
+            }]
+
+        elif audio_format == 'm4a':
+            # Prefer native AAC in m4a
+            self.ydl_opts['format'] = 'bestaudio[ext=m4a]/bestaudio'
+            self.ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'm4a',    # stream copy if already m4a
+            }]
+
+        elif audio_format == 'mp3':
+            self.ydl_opts['format'] = 'bestaudio[acodec=opus]/bestaudio'
+            self.ydl_opts['postprocessors'] = [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '0',   # or '320'
+            }]
 
         self.use_db = skip_downloaded
 
