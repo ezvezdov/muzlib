@@ -135,6 +135,24 @@ def ask_library_path(console: Console, default_music_dir: str) -> str:
 
     return library_path.strip()
 
+def ask_audio_format(console: Console) -> str:
+
+    audio_format = questionary.select(
+        "What audio format do you want to download?",
+        choices=[
+            questionary.Choice(".opus", value="opus"),
+            questionary.Choice(".m4a",  value="m4a"),
+            questionary.Choice(".mp3",  value="mp3"),
+        ]
+    ).ask()
+
+    # If user pressed Ctrl+C
+    if audio_format is None:
+        console.print("[yellow]Cancelled.[/yellow]")
+        return None
+
+    return audio_format
+
 def ask_search_type(console: Console, download_type: str) -> SearchType:
     """
     Determines the target search scope either via pre-defined arguments or interactive prompt.
@@ -342,9 +360,17 @@ def main():
     else:
         library_path = args.library_path if args.library_path else default_music_dir
 
+
+    # Get audio format
+    if not args.audio_format and not args.non_interactive:
+        args.audio_format = ask_audio_format(console)
+    else:
+        args.audio_format = "opus"
+    
+
     # Try to init Muzlib
     try:
-        ml = Muzlib(library_path.strip(), audio_format=args.format)
+        ml = Muzlib(library_path.strip(), audio_format=args.audio_format)
     except Exception as e:
         console.print(Panel(f"[red]Could not open library:[/red] {e}", border_style="red"))
         return

@@ -135,7 +135,7 @@ class Muzlib():
 
     Args:
         library_path (str): The root directory where downloaded music will be stored.
-        audio_format (str, optional): The preferred audio format (e.g., "opus", "mp3"). Defaults to "opus".
+        audio_format (str, optional): The preferred audio format (e.g. "opus", "m4a", "mp3"). Defaults to "m4a".
         skip_downloaded (bool, optional): If True, skips downloading tracks already present in the local database. Defaults to False.
     """
     def __init__(self, library_path: str, audio_format="opus", skip_downloaded=False):
