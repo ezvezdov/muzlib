@@ -70,6 +70,8 @@ def process_arguments():
     parser = argparse.ArgumentParser(description="Muzlib Downloader")
     parser.add_argument("-l", "--library_path", type=str, default="",
         help="Root directory to save downloaded music. Defaults to your OS standard Music folder.")
+    parser.add_argument("-a", "--audio_format", type=str, default="", choices=['m4a', 'opus', 'mp3'],
+        help="Target audio format (e.g., 'opus', 'm4a', 'mp3').")
     parser.add_argument("-d", "--download_type", type=str, choices=['album', 'artist', 'song'],
         help="Scope of the download: 'artist' (full discography), 'album' (specific release), or 'song' (single track).")
     parser.add_argument("--artist", type=str, default="",
@@ -78,8 +80,6 @@ def process_arguments():
         help="Target album's title. Use alongside --artist when --download_type is 'album'.")
     parser.add_argument("--song", type=str, default="",
         help="Target song's title. Use alongside --artist when --download_type is 'song'.")
-    parser.add_argument("--format", type=str, default="opus", choices=['opus', 'mp3'],
-        help="Target audio format (e.g., 'opus', 'mp3').")
     parser.add_argument("--non_interactive", action="store_true",
         help="Bypass all user prompts and automatically download the top search result. Requires --download_type to be set.")
     args = parser.parse_args()
