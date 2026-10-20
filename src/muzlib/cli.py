@@ -254,7 +254,7 @@ def select_from_search_results(ml: Muzlib, search_results: list, search_type: Se
             are empty or if the user declines all available options.
     """
     selected_result = None
-    print(f"Is this the {search_type.name.lower()} you searched for? [Exit by]")
+    print(f"Is this the {search_type.name.lower()} you searched for?")
     
     for result in ml.go_though_search_results(search_results, search_type):
         if is_non_interactive:
