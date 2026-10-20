@@ -49,11 +49,11 @@ muzlib-cli [-h] [-l LIBRARY_PATH] [-d {album,artist,song}]
 |---|---|---|
 | `--help` | `-h` | Show help message and exit. |
 | `--library_path PATH` | `-l` | Root directory to save downloaded music. Defaults to your OS standard Music folder. |
+| `--audio_format FORMAT` | `-a` | Target audio format (e.g., `opus`, `m4a`, `mp3`, ). Defaults to `opus`. |
 | `--download_type {album,artist,song}` | `-d` | Scope of the download: `artist` (full discography), `album` (specific release), or `song` (single track). |
 | `--artist ARTIST` | | Target artist's name. Highly recommended for all download types to ensure accurate search results. |
 | `--album ALBUM` | | Target album's title. Use alongside `--artist` when `--download_type` is `album`. |
 | `--song SONG` | | Target song's title. Use alongside `--artist` when `--download_type` is `song`. |
-| `--format FORMAT` | | Target audio format (e.g., `mp3`, `opus`). Defaults to `opus`. |
 | `--non_interactive` | | Bypass all user prompts and automatically download the top search result. Requires `--download_type` to be set. |
  
 ## Examples
