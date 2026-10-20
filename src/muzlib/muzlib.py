@@ -250,6 +250,59 @@ class Muzlib():
         """
         return self.artists_rename.get(artist_name, artist_name)
 
+    def _find_audio_counterpart(self, track: dict, ytm_album_id: str) -> str | None:
+        """
+        Finds the audio-only ("Art Track") version of an album track that is a music video.
+
+        First checks the counterpart provided by the watch playlist, then falls back to
+        searching songs with the same title and artist. Results from the same album are
+        preferred, otherwise the one with the closest duration is chosen.
+
+        Args:
+            track (dict): The album track dictionary returned by `ytmusic.get_album`.
+            ytm_album_id (str): The YouTube Music album browse ID the track belongs to.
+
+        Returns:
+            str or None: The video ID of the audio track, or None if no match was found.
+        """
+        video_id = track['videoId']
+
+        try:
+            watch_tracks = self.ytmusic.get_watch_playlist(video_id, limit=1)['tracks']
+            counterpart = watch_tracks[0].get('counterpart') if watch_tracks else None
+            if counterpart and counterpart.get('videoType') == 'MUSIC_VIDEO_TYPE_ATV':
+                return counterpart['videoId']
+        except Exception as e:
+            logging_utils.logging.debug(f"Failed to fetch watch playlist for {video_id}: {e}")
+
+        title = text_utils.trackname_remove_unnecessary(track['title']).lower()
+        artists = {artist['name'].strip().lower() for artist in track['artists']}
+
+        try:
+            results = self.ytmusic.search(f"{', '.join(artists)} {title}", filter="songs", limit=10)
+        except Exception as e:
+            logging_utils.logging.warning(f"Failed to search audio track for {video_id}: {e}")
+            return None
+
+        candidates = [
+            song for song in results
+            if song.get('videoId')
+            and song.get('videoType') == 'MUSIC_VIDEO_TYPE_ATV'
+            and text_utils.trackname_remove_unnecessary(song['title']).lower() == title
+            and artists & {artist['name'].strip().lower() for artist in song.get('artists', [])}
+        ]
+        if not candidates:
+            logging_utils.logging.warning(f"No audio track found for music video {video_id} ({track['title']}), downloading video audio")
+            return None
+
+        duration = track.get('duration_seconds') or 0
+        best = min(candidates, key=lambda song: (
+            (song.get('album') or {}).get('id') != ytm_album_id,
+            abs((song.get('duration_seconds') or 0) - duration),
+        ))
+        logging_utils.logging.info(f"Replaced music video {video_id} with audio track {best['videoId']} ({track['title']})")
+        return best['videoId']
+
     def _get_album_metadata(self, ytm_album_id: str, single_id: str = None, single_name: str = None) -> dict:
         """
         Generator that yields detailed metadata for each track in an album or single.
@@ -273,9 +326,9 @@ class Muzlib():
             if not single_name is None and not single_id is None and len(album_details['tracks']) > 1:
                 if not track['title'] in single_name and track_info['ytm_id'] != single_id:
                     continue
-                # TODO: add handling video clips + downloading songs from albums that have video clips as tracks
-                # if track['title'] != single_name and track_info['ytm_id'] != single_id:
-                #     continue
+            # Albums sometimes contain music video clips instead of audio tracks
+            if track.get('videoType') != 'MUSIC_VIDEO_TYPE_ATV':
+                track_info['ytm_id'] = self._find_audio_counterpart(track, ytm_album_id) or track_info['ytm_id']
 
             song_artists = [artist['name'].strip() for artist in track['artists']] + text_utils.get_feat_artists(track['title'])
             track_info['track_artists'] = [self._artist_rename(artist) for artist in song_artists]
